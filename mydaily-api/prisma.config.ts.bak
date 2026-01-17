@@ -1,0 +1,8 @@
+import { defineConfig } from '@prisma/config';
+
+export default defineConfig({
+  datasource: {
+    // URL này lấy từ file .env của bạn
+    url: process.env.DATABASE_URL,
+  },
+});
