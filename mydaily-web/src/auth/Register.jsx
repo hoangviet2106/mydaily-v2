@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../api/axios";
+import { Link } from "react-router-dom";
 
 export default function Register() {
   const [name, setName] = useState("Test User");
