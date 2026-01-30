@@ -17,7 +17,7 @@ const getCurrentBudget = async (req, res) => {
   const userId = req.user.sub;
   const now = new Date();
 
-  const budget = await prisma.budgets.findFirst({
+  const budget = await prisma.budget.findFirst({
     where: {
       user_id: userId,
       month: now.getMonth() + 1,
@@ -45,7 +45,7 @@ const getBudgetByMonth = async (req, res) => {
   const month = parsed.data.month ?? (now.getMonth() + 1);
   const year = parsed.data.year ?? now.getFullYear();
 
-  const budget = await prisma.budgets.findFirst({
+  const budget = await prisma.budget.findFirst({
     where: { user_id: userId, month, year, deleted_at: null },
   });
 
@@ -64,7 +64,7 @@ const upsertBudget = async (req, res) => {
 
   const { limit_amount, month, year } = parsed.data;
 
-  const budget = await prisma.budgets.upsert({
+  const budget = await prisma.budget.upsert({
     where: {
       user_id_month_year: {
         user_id: userId,

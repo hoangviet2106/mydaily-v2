@@ -36,13 +36,27 @@ function safeMessage(err) {
   return err?.message || "Internal server error";
 }
 
+function requireUserId(req, res) {
+  const userId = req.user?.sub;
+  if (!userId) {
+    res.status(401).json({ error: "UNAUTHORIZED", message: "Missing user in token" });
+    return null;
+  }
+  return userId;
+}
+
+/** =========================
+ * GET /categories
+ * ========================= */
 exports.listCategories = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
-    const categories = await prisma.categories.findMany({
+    const categories = await prisma.category.findMany({
       where: { user_id: userId, deleted_at: null },
       orderBy: { created_at: "desc" },
+      select: { id: true, name: true, created_at: true },
     });
 
     return res.json(categories);
@@ -55,7 +69,7 @@ exports.listCategories = async (req, res) => {
       return res.status(500).json({
         error: "PRISMA_SCHEMA_MISMATCH",
         message:
-          "Prisma Client chưa có field user_id cho categories. Hãy sửa schema.prisma (user_id không @id), chạy `npx prisma generate`, và restart server.",
+          "Prisma Client chưa có field user_id cho categories. Hãy chạy `npx prisma generate` và restart server.",
       });
     }
 
@@ -63,9 +77,14 @@ exports.listCategories = async (req, res) => {
   }
 };
 
+/** =========================
+ * POST /categories
+ * FREE: max 3 categories
+ * ========================= */
 exports.createCategory = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     const parsed = createCategorySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -75,15 +94,48 @@ exports.createCategory = async (req, res) => {
       });
     }
 
-    // Normalize name (MySQL thường CI nên so sánh == đã đủ)
     const normalizedName = String(parsed.data.name ?? "").trim();
+    if (!normalizedName) {
+      return res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Category name is required",
+      });
+    }
 
-    const existing = await prisma.categories.findFirst({
-      where: {
-        user_id: userId,
-        deleted_at: null,
-        name: normalizedName, // <-- bỏ mode
-      },
+    // Determine plan
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deleted_at: null },
+      select: { account_type: true },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        error: "UNAUTHORIZED",
+        message: "User not found or not authorized",
+      });
+    }
+
+    // FREE: limit 3 categories (not deleted)
+    if (user.account_type === "FREE") {
+      const count = await prisma.category.count({
+        where: { user_id: userId, deleted_at: null },
+      });
+
+      if (count >= 3) {
+        return res.status(403).json({
+          error: "CATEGORY_LIMIT_REACHED",
+          message: "Người dùng Free chỉ được tạo tối đa 3 loại. Vui lòng nâng cấp PREMIUM để tạo không giới hạn.",
+          limit: 3,
+          plan: "FREE",
+          upgrade_required: true,
+        });
+      }
+    }
+
+    // Duplicate check
+    const existing = await prisma.category.findFirst({
+      where: { user_id: userId, deleted_at: null, name: normalizedName },
+      select: { id: true },
     });
 
     if (existing) {
@@ -93,12 +145,13 @@ exports.createCategory = async (req, res) => {
       });
     }
 
-    const category = await prisma.categories.create({
+    const category = await prisma.category.create({
       data: {
         id: crypto.randomUUID(),
         user_id: userId,
         name: normalizedName,
       },
+      select: { id: true, name: true, created_at: true },
     });
 
     return res.status(201).json(category);
@@ -119,9 +172,14 @@ exports.createCategory = async (req, res) => {
   }
 };
 
+/** =========================
+ * PATCH /categories/:id
+ * ========================= */
 exports.updateCategory = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
     const { id } = req.params;
 
     const parsed = updateCategorySchema.safeParse(req.body);
@@ -132,8 +190,17 @@ exports.updateCategory = async (req, res) => {
       });
     }
 
-    const category = await prisma.categories.findFirst({
+    const normalizedName = String(parsed.data.name ?? "").trim();
+    if (!normalizedName) {
+      return res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Category name is required",
+      });
+    }
+
+    const category = await prisma.category.findFirst({
       where: { id, user_id: userId, deleted_at: null },
+      select: { id: true },
     });
 
     if (!category) {
@@ -143,15 +210,9 @@ exports.updateCategory = async (req, res) => {
       });
     }
 
-    const normalizedName = String(parsed.data.name ?? "").trim();
-
-    const dup = await prisma.categories.findFirst({
-      where: {
-        user_id: userId,
-        deleted_at: null,
-        id: { not: id },
-        name: normalizedName, // <-- bỏ mode
-      },
+    const dup = await prisma.category.findFirst({
+      where: { user_id: userId, deleted_at: null, id: { not: id }, name: normalizedName },
+      select: { id: true },
     });
 
     if (dup) {
@@ -161,9 +222,10 @@ exports.updateCategory = async (req, res) => {
       });
     }
 
-    const updated = await prisma.categories.update({
+    const updated = await prisma.category.update({
       where: { id },
       data: { name: normalizedName },
+      select: { id: true, name: true, created_at: true },
     });
 
     return res.json(updated);
@@ -184,13 +246,19 @@ exports.updateCategory = async (req, res) => {
   }
 };
 
+/** =========================
+ * DELETE /categories/:id (soft delete)
+ * ========================= */
 exports.deleteCategory = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
     const { id } = req.params;
 
-    const category = await prisma.categories.findFirst({
+    const category = await prisma.category.findFirst({
       where: { id, user_id: userId, deleted_at: null },
+      select: { id: true },
     });
 
     if (!category) {
@@ -200,7 +268,7 @@ exports.deleteCategory = async (req, res) => {
       });
     }
 
-    const inUse = await prisma.expenses.findFirst({
+    const inUse = await prisma.expense.findFirst({
       where: { user_id: userId, category_id: id, deleted_at: null },
       select: { id: true },
     });
@@ -212,7 +280,7 @@ exports.deleteCategory = async (req, res) => {
       });
     }
 
-    await prisma.categories.update({
+    await prisma.category.update({
       where: { id },
       data: { deleted_at: new Date() },
     });
@@ -220,99 +288,6 @@ exports.deleteCategory = async (req, res) => {
     return res.json({ message: "Category deleted" });
   } catch (err) {
     console.error("DELETE_CATEGORY_ERROR:", err);
-    const mapped = prismaErrorToHttp(err);
-    if (mapped) return res.status(mapped.status).json(mapped.body);
-
-    if (String(err?.message || "").includes("Unknown argument `user_id`")) {
-      return res.status(500).json({
-        error: "PRISMA_SCHEMA_MISMATCH",
-        message:
-          "Prisma Client chưa có field user_id cho categories. Hãy chạy `npx prisma generate` và restart server.",
-      });
-    }
-
-    return res.status(500).json({ error: "SERVER_ERROR", message: safeMessage(err) });
-  }
-};
-exports.createCategory = async (req, res) => {
-  try {
-    const userId = req.user.sub;
-
-    const parsed = createCategorySchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: parsed.error.issues[0]?.message || "Invalid input",
-      });
-    }
-
-    // Normalize name
-    const normalizedName = String(parsed.data.name ?? "").trim();
-    if (!normalizedName) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Category name is required",
-      });
-    }
-
-    // 1) Lấy loại account (FREE / PREMIUM)
-    const user = await prisma.users.findFirst({
-      where: { id: userId, deleted_at: null },
-      select: { account_type: true },
-    });
-
-    if (!user) {
-      return res.status(401).json({
-        error: "UNAUTHORIZED",
-        message: "User not found or not authorized",
-      });
-    }
-
-    // 2) FREE: giới hạn 3 categories (không tính deleted)
-    if (user.account_type === "FREE") {
-      const count = await prisma.categories.count({
-        where: { user_id: userId, deleted_at: null },
-      });
-
-      if (count >= 3) {
-        return res.status(403).json({
-          error: "CATEGORY_LIMIT_REACHED",
-          message:
-            "Người dùng Free chỉ được tạo tối đa 3 loại. Vui lòng nâng cấp PREMIUM để tạo không giới hạn.",
-          limit: 3,
-        });
-      }
-    }
-
-    // 3) Duplicate check (MySQL CI thường tự case-insensitive)
-    const existing = await prisma.categories.findFirst({
-      where: {
-        user_id: userId,
-        deleted_at: null,
-        name: normalizedName,
-      },
-      select: { id: true },
-    });
-
-    if (existing) {
-      return res.status(409).json({
-        error: "CATEGORY_EXISTS",
-        message: "Category name already exists",
-      });
-    }
-
-    // 4) Create
-    const category = await prisma.categories.create({
-      data: {
-        id: crypto.randomUUID(),
-        user_id: userId,
-        name: normalizedName,
-      },
-    });
-
-    return res.status(201).json(category);
-  } catch (err) {
-    console.error("CREATE_CATEGORY_ERROR:", err);
     const mapped = prismaErrorToHttp(err);
     if (mapped) return res.status(mapped.status).json(mapped.body);
 

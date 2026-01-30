@@ -19,7 +19,6 @@ function toMonthYear(dateStr) {
 }
 
 function BudgetStatus({ budget, actual }) {
-  // backend: limit_amount
   const limit = Number(budget?.limit_amount || 0);
   const spent = Number(actual || 0);
 
@@ -70,7 +69,7 @@ export default function BudgetsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [budget, setBudget] = useState(null); // backend trả: { id, month, year, limit_amount, ... }
+  const [budget, setBudget] = useState(null); // { id, month, year, limit_amount, ... }
   const [draftAmount, setDraftAmount] = useState("");
 
   const [expenses, setExpenses] = useState([]);
@@ -99,20 +98,14 @@ export default function BudgetsPage() {
     setLoading(true);
     setError("");
     try {
-      const [exps, b] = await Promise.all([
-        fetchExpenses(),
-        fetchBudgetByMonthYear(month, year),
-      ]);
-
+      const [exps, b] = await Promise.all([fetchExpenses(), fetchBudgetByMonthYear(month, year)]);
       setExpenses(exps || []);
 
       // GET /budgets trả thẳng budget object hoặc null
       const normalized = b?.budget ?? b?.data ?? b ?? null;
 
-      // backend field: limit_amount
       const amt =
         normalized?.limit_amount ??
-        // fallback nếu sau này bạn đổi schema
         normalized?.amount ??
         normalized?.limit ??
         normalized?.budget_limit ??
@@ -150,7 +143,6 @@ export default function BudgetsPage() {
 
     setSaving(true);
     try {
-      // POST /budgets expects: { limit_amount, month, year }
       const res = await upsertBudget({
         month: Number(month),
         year: Number(year),
@@ -167,11 +159,7 @@ export default function BudgetsPage() {
         normalized?.budgetLimit ??
         n;
 
-      setBudget(
-        normalized
-          ? { ...normalized, limit_amount: amt }
-          : { month, year, limit_amount: amt }
-      );
+      setBudget(normalized ? { ...normalized, limit_amount: amt } : { month, year, limit_amount: amt });
       setDraftAmount(String(amt));
     } catch (err) {
       const msg =
@@ -187,185 +175,169 @@ export default function BudgetsPage() {
 
   const onResetDraft = () => {
     setDraftAmount(
-      budget?.limit_amount !== undefined && budget?.limit_amount !== null
-        ? String(budget.limit_amount)
-        : ""
+      budget?.limit_amount !== undefined && budget?.limit_amount !== null ? String(budget.limit_amount) : ""
     );
     setError("");
   };
 
   return (
-    <div className="card pad-lg budgetWide">
-      <div className="row" style={{ alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ margin: 0 }}>Budgets</h3>
-          <p className="p-muted">
-            Thiết lập ngân sách theo tháng và theo dõi Ngân sách vs Chi tiêu.
-          </p>
-        </div>
-
-        <div className="row">
-          <button className="btn" onClick={load} disabled={loading}>
-            Tải lại trang
-          </button>
-        </div>
-      </div>
-
-      {error ? <div className="alert">{error}</div> : null}
-
-      <div className="toolbar" style={{ marginTop: 10 }}>
-        <div className="toolbar__left">
-          <div className="toolbar__group">
-            <label className="label" style={{ margin: 0 }}>
-              Month
-            </label>
-            <select
-              className="input input--sm"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-            >
-              {Array.from({ length: 12 }).map((_, i) => {
-                const m = i + 1;
-                return (
-                  <option key={m} value={m}>
-                    {pad2(m)}
-                  </option>
-                );
-              })}
-            </select>
-
-            <label className="label" style={{ margin: 0 }}>
-              Year
-            </label>
-            <input
-              className="input input--sm"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              inputMode="numeric"
-              style={{ width: 110 }}
-            />
+    <div className="pageWidth">
+      <div className="card pad-lg">
+        {/* Header */}
+        <div className="dashHeader">
+          <div>
+            <div className="pageTitle">Budgets</div>
+            <div className="dashDate">
+              Thiết lập ngân sách theo tháng và theo dõi Ngân sách vs Chi tiêu.
+            </div>
           </div>
 
-          <div className="toolbar__group">
-            <label className="label" style={{ margin: 0 }}>
-              Ngân sách
-            </label>
-            <input
-              className="input input--sm"
-              placeholder="Ví dụ: 3.000.000"
-              value={draftAmount}
-              onChange={(e) => setDraftAmount(e.target.value)}
-              inputMode="numeric"
-              style={{ width: 220 }}
-            />
-
-            <button
-              className="btn btn-primary"
-              onClick={onSave}
-              disabled={saving || loading}
-            >
-              {saving ? "Saving…" : budget ? "Cập nhật ngân sách" : "Tạo ngân sách mới"}
-            </button>
-
-            <button
-              className="btn"
-              onClick={onResetDraft}
-              disabled={saving || loading}
-            >
-              Cài lại
+          <div className="pageActions">
+            <button className="btn" onClick={load} disabled={loading}>
+              Tải lại trang
             </button>
           </div>
         </div>
 
-        <div className="toolbar__right">
-          <div className="stat">
-            <div className="stat__label">Chi tiêu</div>
-            <div className="stat__value">{formatMoney(actual)} VNĐ</div>
+        {error ? <div className="alert">{error}</div> : null}
+
+        {/* Filters + Editor */}
+        <div className="toolbar" style={{ marginTop: 10 }}>
+          <div className="toolbar__left">
+            <div className="toolbar__group">
+              <label className="label" style={{ margin: 0 }}>
+                Month
+              </label>
+              <select className="input input--sm" value={month} onChange={(e) => setMonth(e.target.value)}>
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const m = i + 1;
+                  return (
+                    <option key={m} value={m}>
+                      {pad2(m)}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <label className="label" style={{ margin: 0 }}>
+                Year
+              </label>
+              <input
+                className="input input--sm"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                inputMode="numeric"
+                style={{ width: 110 }}
+              />
+            </div>
+
+            <div className="toolbar__group">
+              <label className="label" style={{ margin: 0 }}>
+                Ngân sách
+              </label>
+              <input
+                className="input input--sm"
+                placeholder="Ví dụ: 3000000"
+                value={draftAmount}
+                onChange={(e) => setDraftAmount(e.target.value)}
+                inputMode="numeric"
+                style={{ width: 220 }}
+              />
+
+              <button className="btn btn-primary" onClick={onSave} disabled={saving || loading}>
+                {saving ? "Saving…" : budget ? "Cập nhật ngân sách" : "Tạo ngân sách mới"}
+              </button>
+
+              <button className="btn" onClick={onResetDraft} disabled={saving || loading}>
+                Cài lại
+              </button>
+            </div>
           </div>
-          <div className="stat">
-            <div className="stat__label">Còn lại</div>
-            <div className="stat__value">{formatMoney(remaining)} VNĐ</div>
+
+          <div className="toolbar__right">
+            <div className="stat">
+              <div className="stat__label">Chi tiêu</div>
+              <div className="stat__value">{formatMoney(actual)} VNĐ</div>
+            </div>
+            <div className="stat">
+              <div className="stat__label">Còn lại</div>
+              <div className="stat__value">{formatMoney(remaining)} VNĐ</div>
+            </div>
           </div>
         </div>
+
+        <BudgetStatus budget={budget} actual={actual} />
+
+        {loading ? (
+          <div className="skeleton">Loading budget…</div>
+        ) : (
+          <>
+            <div className="cards3" style={{ marginTop: 14 }}>
+              <div className="mini">
+                <div className="mini__label">Ngân sách</div>
+                <div className="mini__value">{budget ? formatMoney(budget.limit_amount) : "—"}</div>
+                <div className="mini__hint">
+                  Ngân sách của tháng {pad2(Number(month))}/{year}
+                </div>
+              </div>
+
+              <div className="mini">
+                <div className="mini__label">Sử dụng</div>
+                <div className="mini__value">{budget ? `${percentUsed}%` : "—"}</div>
+
+                <div className="progress" aria-label="Budget usage">
+                  <div className="progress__bar" style={{ width: `${percentUsed}%` }} />
+                </div>
+
+                <div className="mini__hint">Tỷ lệ sử dụng ngân sách</div>
+              </div>
+
+              <div className="mini">
+                <div className="mini__label">Action</div>
+                <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
+                  Gợi ý: nếu chi tiêu tháng này biến động mạnh, hãy cập nhật budget để phản ánh thực tế.
+                </div>
+              </div>
+            </div>
+
+            {/* Table (gọn + scroll đúng system) */}
+            <div className="table-scroll" style={{ marginTop: 14 }}>
+              <div className="table-wrap">
+                <table className="table table__head-sticky">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 220 }}>Thời gian</th>
+                      <th style={{ width: 200 }}>Ngân sách</th>
+                      <th style={{ width: 200 }}>Chi tiêu</th>
+                      <th style={{ width: 200 }}>Còn lại</th>
+                      <th>Ghi chú</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="mono">
+                        {pad2(Number(month))}/{year}
+                      </td>
+                      <td className="mono" style={{ fontWeight: 900 }}>
+                        {budget ? formatMoney(budget.limit_amount) : "—"}
+                      </td>
+                      <td className="mono" style={{ fontWeight: 900 }}>
+                        {formatMoney(actual)}
+                      </td>
+                      <td className="mono" style={{ fontWeight: 900 }}>
+                        {budget ? formatMoney(Math.max(Number(budget.limit_amount || 0) - actual, 0)) : "—"}
+                      </td>
+                      <td className="td-muted">
+                        {budget ? "Bạn có thể chỉnh budget ở ô phía trên." : "Chưa có budget, hãy tạo để theo dõi chi tiêu."}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-
-      <BudgetStatus budget={budget} actual={actual} />
-
-      {loading ? (
-        <div className="skeleton">Loading budget…</div>
-      ) : (
-        <>
-          <div className="cards3" style={{ marginTop: 14 }}>
-            <div className="mini">
-              <div className="mini__label">Ngân sách</div>
-              <div className="mini__value">
-                {budget ? formatMoney(budget.limit_amount) : "—"}
-              </div>
-              <div className="mini__hint">
-                Ngân sách của tháng {pad2(Number(month))}/{year}
-              </div>
-            </div>
-
-            <div className="mini">
-              <div className="mini__label">Sử dụng</div>
-              <div className="mini__value">{budget ? `${percentUsed}%` : "—"}</div>
-
-              <div className="progress" aria-label="Budget usage">
-                <div className="progress__bar" style={{ width: `${percentUsed}%` }} />
-              </div>
-
-              <div className="mini__hint">Tỷ lệ sử dụng ngân sách</div>
-            </div>
-
-            <div className="mini">
-              <div className="mini__label">Action</div>
-              <div
-                className="mini__value"
-                style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}
-              >
-                Gợi ý: nếu chi tiêu tháng này biến động mạnh, hãy cập nhật budget để phản ánh thực tế.
-              </div>
-            </div>
-          </div>
-
-          <div className="table-wrap" style={{ marginTop: 14 }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: 220 }}>Thời Gian</th>
-                  <th style={{ width: 200 }}>Ngân sách</th>
-                  <th style={{ width: 200 }}>Chi tiêu</th>
-                  <th style={{ width: 200 }}>Còn lại</th>
-                  <th>Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="mono">
-                    {pad2(Number(month))}/{year}
-                  </td>
-                  <td className="mono" style={{ fontWeight: 900 }}>
-                    {budget ? formatMoney(budget.limit_amount) : "—"}
-                  </td>
-                  <td className="mono" style={{ fontWeight: 900 }}>
-                    {formatMoney(actual)}
-                  </td>
-                  <td className="mono" style={{ fontWeight: 900 }}>
-                    {budget
-                      ? formatMoney(Math.max(Number(budget.limit_amount || 0) - actual, 0))
-                      : "—"}
-                  </td>
-                  <td className="td-muted">
-                    {budget
-                      ? "Bạn có thể chỉnh budget ở ô phía trên."
-                      : "Chưa có budget, hãy tạo để theo dõi chi tiêu."}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
     </div>
   );
 }

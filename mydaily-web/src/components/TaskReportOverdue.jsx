@@ -28,29 +28,39 @@ export default function TaskReportOverdue() {
   if (err) return <div className="alert">{err}</div>;
 
   if (items.length === 0) {
-    return <div className="banner banner--ok">🎉 Không có task trễ hạn</div>;
+    return (
+      <div className="banner banner--ok" style={{ marginTop: 14 }}>
+        🎉 Không có task trễ hạn – làm tốt lắm!
+      </div>
+    );
   }
 
   return (
-    <div className="table-wrap" style={{ marginTop: 12 }}>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Task</th>
-            <th>Due date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((t) => (
-            <tr key={t.id}>
-              <td style={{ fontWeight: 900 }}>{t.title}</td>
-              <td className="td-muted">
-                {t.due_date ? new Date(t.due_date).toLocaleDateString("vi-VN") : "—"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div style={{ marginTop: 14 }}>
+      <div className="table-scroll">
+        <div className="table-wrap">
+          <table className="table table__head-sticky">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th style={{ width: 160 }}>Due date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((t) => (
+                <tr key={t.id}>
+                  <td style={{ fontWeight: 900 }}>{t.title}</td>
+                  <td className="td-muted">
+                    {t.due_date
+                      ? new Date(t.due_date).toLocaleDateString("vi-VN")
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

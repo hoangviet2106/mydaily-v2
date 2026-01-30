@@ -152,20 +152,20 @@ export default function TasksPage() {
   const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
 
   return (
-    <div className="container taskWide">
+    <div className="pageWidth">
       {/* Header */}
-      <div className="topbar">
-        <div>
-          <div className="h1">Tasks</div>
-          <div className="p-muted">Manage your work and deadlines</div>
-        </div>
+    <div className="dashHeader">
+  <div>
+    <div className="pageTitle">Tasks</div>
+    <div className="dashDate">Manage your work and deadlines</div>
+  </div>
 
-        <div className="toolbar__right">
-          <button className="btn btn-primary" onClick={openCreate} type="button">
-            + New task
-          </button>
-        </div>
-      </div>
+  <div className="pageActions">
+    <button className="btn btn-primary" onClick={openCreate} type="button">
+      + New task
+    </button>
+  </div>
+</div>
 
       {/* Summary cards */}
       <div className="cards3">
@@ -189,7 +189,7 @@ export default function TasksPage() {
       </div>
 
       {/* Toolbar Filters */}
-      <div className="toolbar">
+      <div className="toolbar taskToolbar">
         <div className="toolbar__left">
           <TaskFilters
             value={filters}

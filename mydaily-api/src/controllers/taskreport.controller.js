@@ -98,13 +98,13 @@ exports.summary = async (req, res) => {
     };
 
     const [totalCreated, completed, open] = await Promise.all([
-      prisma.tasks.count({ where: baseWhere }),
-      prisma.tasks.count({ where: { ...baseWhere, is_completed: true } }),
-      prisma.tasks.count({ where: { ...baseWhere, is_completed: false } }),
+      prisma.task.count({ where: baseWhere }),
+      prisma.task.count({ where: { ...baseWhere, is_completed: true } }),
+      prisma.task.count({ where: { ...baseWhere, is_completed: false } }),
     ]);
 
     // overdue: not completed AND due_date < today (within created range)
-    const overdue = await prisma.tasks.count({
+    const overdue = await prisma.task.count({
       where: {
         ...baseWhere,
         is_completed: false,
@@ -113,7 +113,7 @@ exports.summary = async (req, res) => {
     });
 
     // due today: not completed AND due_date == today
-    const dueToday = await prisma.tasks.count({
+    const dueToday = await prisma.task.count({
       where: {
         ...baseWhere,
         is_completed: false,
@@ -122,7 +122,7 @@ exports.summary = async (req, res) => {
     });
 
     // due next 7 days: not completed AND due between today..next7
-    const dueNext7Days = await prisma.tasks.count({
+    const dueNext7Days = await prisma.task.count({
       where: {
         ...baseWhere,
         is_completed: false,
@@ -172,7 +172,7 @@ exports.trend = async (req, res) => {
     const { from, to } = rangeDefaultLastNDays(days);
 
     // Fetch minimal data for aggregation in JS
-    const rows = await prisma.tasks.findMany({
+    const rows = await prisma.task.findMany({
       where: {
         user_id: userId,
         deleted_at: null,
@@ -238,7 +238,7 @@ exports.topOverdue = async (req, res) => {
 
     const today = startOfDay(new Date());
 
-    const items = await prisma.tasks.findMany({
+    const items = await prisma.task.findMany({
       where: {
         user_id: userId,
         deleted_at: null,

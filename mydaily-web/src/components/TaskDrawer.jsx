@@ -32,11 +32,22 @@ export default function TaskDrawer({ open, mode, initialValue, submitting, onSub
 
   const heading = mode === "edit" ? "Edit task" : "New task";
 
+  const footer = (
+    <>
+      <button className="btn" type="button" onClick={onClose} disabled={submitting}>
+        Cancel
+      </button>
+      <button className="btn btn-primary" type="submit" form="taskForm" disabled={submitting}>
+        {submitting ? "Saving..." : "Save"}
+      </button>
+    </>
+  );
+
   return (
-    <Modal open={open} title={heading} onClose={onClose}>
-      <form onSubmit={handleSubmit}>
+    <Modal open={open} title={heading} onClose={onClose} footer={footer}>
+      <form id="taskForm" onSubmit={handleSubmit}>
         {err ? (
-          <div className="alert alert--error" role="alert">
+          <div className="alert" role="alert">
             {err}
           </div>
         ) : null}
@@ -59,15 +70,6 @@ export default function TaskDrawer({ open, mode, initialValue, submitting, onSub
         <div className="field">
           <label className="label">Due date</label>
           <input className="input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-        </div>
-
-        <div className="modal__actions">
-          <button className="btn" type="button" onClick={onClose} disabled={submitting}>
-            Cancel
-          </button>
-          <button className="btn btn--primary" type="submit" disabled={submitting}>
-            {submitting ? "Saving..." : "Save"}
-          </button>
         </div>
       </form>
     </Modal>

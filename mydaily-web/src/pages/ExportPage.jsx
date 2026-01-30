@@ -8,12 +8,31 @@ function monthStartYear() {
   const d = new Date();
   return { month: d.getMonth() + 1, year: d.getFullYear() };
 }
+function prevMonthYear(month, year) {
+  const m = Number(month);
+  const y = Number(year);
+  if (m <= 1) return { month: 12, year: y - 1 };
+  return { month: m - 1, year: y };
+}
 
 const EXPORTS = [
   { key: "expenses", title: "Expenses", desc: "Danh sách chi tiêu theo tháng" },
   { key: "budgets", title: "Budgets", desc: "Ngân sách theo tháng" },
   { key: "reports", title: "Finance Reports", desc: "Tổng hợp theo danh mục" },
 ];
+
+function TabCard({ active, title, desc, onClick }) {
+  return (
+    <button
+      type="button"
+      className={active ? "segmented__btn is-active" : "segmented__btn"}
+      onClick={onClick}
+    >
+      <div className="segmented__top">{title}</div>
+      <div className="segmented__sub">{desc}</div>
+    </button>
+  );
+}
 
 export default function ExportPage() {
   const { accountType, meLoading } = useOutletContext();
@@ -23,26 +42,40 @@ export default function ExportPage() {
   const [format, setFormat] = useState("csv");
   const [month, setMonth] = useState(m0);
   const [year, setYear] = useState(y0);
+
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
-  const token = useMemo(() => localStorage.getItem("token"), []);
-  const canExport = !meLoading && accountType === "PREMIUM";
+  // đọc token realtime để tránh case login xong token mới mà memo không update
+  const token = localStorage.getItem("token");
 
+  const canExport = !meLoading && accountType === "PREMIUM";
   const active = EXPORTS.find((x) => x.key === type);
+
   const ext = format === "xlsx" ? "xlsx" : "csv";
   const filename = `${type}_${year}-${pad2(month)}.${ext}`;
   const endpoint = `/export/${type}?format=${format}&month=${month}&year=${year}`;
 
+  const canExportReason = useMemo(() => {
+    if (meLoading) return "Đang tải thông tin tài khoản…";
+    if (!token) return "Bạn chưa đăng nhập (không có token).";
+    if (accountType !== "PREMIUM") return "Tính năng Export chỉ dành cho Premium.";
+    return "";
+  }, [meLoading, token, accountType]);
+
   async function downloadExport() {
     setError("");
+
     if (!token) return setError("Bạn chưa đăng nhập (không có token).");
     if (!canExport) return setError("Tính năng Export chỉ dành cho Premium.");
 
     setDownloading(true);
     try {
       const url = `http://localhost:3000${endpoint}`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(txt || `Export failed: ${res.status}`);
@@ -64,116 +97,162 @@ export default function ExportPage() {
     }
   }
 
+  const onPickThisMonth = () => {
+    const cur = monthStartYear();
+    setMonth(cur.month);
+    setYear(cur.year);
+  };
+
+  const onPickPrevMonth = () => {
+    const cur = monthStartYear();
+    const prev = prevMonthYear(cur.month, cur.year);
+    setMonth(prev.month);
+    setYear(prev.year);
+  };
+
   return (
-    <div className="pageWrap">
-      <div className="pageHeader">
-        <div>
-          <div className="pageTitle">Export Data</div>
-          <div className="pageSub">Tải dữ liệu xuống dạng CSV hoặc Excel (XLSX) theo tháng.</div>
+    <div className="card pad-lg reportWide">
+      {/* Header */}
+      <div className="row" style={{ alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ margin: 0 }}>Export Data</h3>
+          <p className="p-muted">Tải dữ liệu xuống dạng CSV hoặc Excel (XLSX) theo tháng.</p>
         </div>
 
-        <div className="pageActions">
-          <span className="hintChip">File: <b>{filename}</b></span>
+        <div className="row">
+          <span className="tag">
+            File <span className="mono">{filename}</span>
+          </span>
         </div>
       </div>
 
-      {!meLoading && accountType !== "PREMIUM" && (
-        <div className="banner banner--warn">
-          Bạn đang ở gói <b>{accountType}</b>. Export chỉ dành cho <b>PREMIUM</b>.
+      {!meLoading && accountType !== "PREMIUM" ? (
+        <div className="banner banner--warn" style={{ marginTop: 12 }}>
+          <div>
+            <div className="banner__title">Giới hạn gói tài khoản</div>
+            <div className="banner__sub">
+              Bạn đang ở gói <b>{accountType}</b>. Export chỉ dành cho <b>PREMIUM</b>.
+            </div>
+          </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="grid2">
-        {/* Left: Form */}
-        <div className="panel">
-          <div className="panel__title">Thiết lập export</div>
-
-          <div className="segmented">
-            {EXPORTS.map((x) => (
-              <button
-                key={x.key}
-                type="button"
-                className={type === x.key ? "segmented__btn is-active" : "segmented__btn"}
-                onClick={() => setType(x.key)}
-              >
-                <div className="segmented__top">{x.title}</div>
-                <div className="segmented__sub">{x.desc}</div>
-              </button>
-            ))}
+      {error ? (
+        <div className="banner banner--danger" style={{ marginTop: 12 }}>
+          <div>
+            <div className="banner__title">Export lỗi</div>
+            <div className="banner__sub">{error}</div>
           </div>
+        </div>
+      ) : null}
 
-          <div className="formGrid">
-            <label className="field2">
-              <div className="label2">Định dạng</div>
-              <select value={format} onChange={(e) => setFormat(e.target.value)} className="input2">
-                <option value="csv">CSV</option>
-                <option value="xlsx">Excel (XLSX)</option>
-              </select>
-              <div className="help2">CSV nhẹ, XLSX đẹp khi mở bằng Excel.</div>
-            </label>
-
-            <label className="field2">
-              <div className="label2">Tháng</div>
-              <input
-                className="input2"
-                type="number"
-                min={1}
-                max={12}
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-              />
-            </label>
-
-            <label className="field2">
-              <div className="label2">Năm</div>
-              <input
-                className="input2"
-                type="number"
-                min={2000}
-                max={2100}
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-              />
-            </label>
-          </div>
-
-          {error && <div className="banner banner--danger">{error}</div>}
-
-          <div className="panel__actions">
-            <button className="btn btn-primary" onClick={downloadExport} disabled={downloading || !canExport}>
-              {downloading ? "Đang export..." : "Export"}
+      {/* Config */}
+      <div className="toolbar" style={{ marginTop: 12 }}>
+        <div className="toolbar__left">
+          <div className="toolbar__group">
+            <span className="tag">Quick</span>
+            <button className="btn btn-sm" type="button" onClick={onPickThisMonth}>
+              Tháng này
             </button>
-            {/* <div className="muted">API: <code className="codePill">{endpoint}</code></div> */}
+            <button className="btn btn-sm" type="button" onClick={onPickPrevMonth}>
+              Tháng trước
+            </button>
+          </div>
+
+          <div className="toolbar__group">
+            <label className="label" style={{ margin: 0 }}>
+              Format
+            </label>
+            <select className="input input--sm" value={format} onChange={(e) => setFormat(e.target.value)}>
+              <option value="csv">CSV</option>
+              <option value="xlsx">Excel (XLSX)</option>
+            </select>
+
+            <label className="label" style={{ margin: 0 }}>
+              Month
+            </label>
+            <input
+              className="input input--sm"
+              type="number"
+              min={1}
+              max={12}
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              style={{ width: 90 }}
+            />
+
+            <label className="label" style={{ margin: 0 }}>
+              Year
+            </label>
+            <input
+              className="input input--sm"
+              type="number"
+              min={2000}
+              max={2100}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              style={{ width: 110 }}
+            />
           </div>
         </div>
 
-        {/* Right: Preview */}
-        <div className="panel">
-          <div className="panel__title">Xem trước</div>
+        <div className="toolbar__right">
+          <button
+            className="btn btn-primary"
+            onClick={downloadExport}
+            disabled={downloading || !canExport}
+            title={!canExport ? canExportReason : "Download file"}
+          >
+            {downloading ? "Đang export..." : "Export"}
+          </button>
+        </div>
+      </div>
 
-          <div className="previewCard">
-            <div className="previewRow">
-              <div className="previewLabel">Loại dữ liệu</div>
-              <div className="previewValue">{active?.title}</div>
-            </div>
-            <div className="previewRow">
-              <div className="previewLabel">Thời gian</div>
-              <div className="previewValue">{pad2(month)}/{year}</div>
-            </div>
-            <div className="previewRow">
-              <div className="previewLabel">Định dạng</div>
-              <div className="previewValue">{format.toUpperCase()}</div>
-            </div>
-            <div className="previewRow">
-              <div className="previewLabel">Tên file</div>
-              <div className="previewValue"><b>{filename}</b></div>
-            </div>
+      {/* Types */}
+      <div style={{ marginTop: 14 }}>
+        <div className="segmented">
+          {EXPORTS.map((x) => (
+            <TabCard
+              key={x.key}
+              active={type === x.key}
+              title={x.title}
+              desc={x.desc}
+              onClick={() => setType(x.key)}
+            />
+          ))}
+        </div>
+      </div>
 
-            <div className="divider" />
+      {/* Preview / info */}
+      <div className="cards3" style={{ marginTop: 14 }}>
+        <div className="mini">
+          <div className="mini__label">Loại dữ liệu</div>
+          <div className="mini__value">{active?.title}</div>
+          <div className="mini__hint">{active?.desc}</div>
+        </div>
 
-            <div className="muted">
-              Mẹo: Nếu bạn muốn nộp bài “xịn”, hãy export XLSX và mở thử để kiểm tra tiếng Việt/format.
-            </div>
+        <div className="mini">
+          <div className="mini__label">Thời gian</div>
+          <div className="mini__value mono">
+            {pad2(Number(month))}/{year}
+          </div>
+          <div className="mini__hint">Dữ liệu lọc theo tháng</div>
+        </div>
+
+        <div className="mini">
+          <div className="mini__label">Endpoint</div>
+          <div className="mini__value mono" style={{ fontSize: 13 }}>
+            {endpoint}
+          </div>
+          <div className="mini__hint">API route đang gọi</div>
+        </div>
+      </div>
+
+      <div className="banner" style={{ marginTop: 14 }}>
+        <div>
+          <div className="banner__title">Mẹo</div>
+          <div className="banner__sub">
+            CSV nhẹ và nhanh. XLSX đẹp khi mở Excel và dễ nộp bài (kiểm tra font tiếng Việt).
           </div>
         </div>
       </div>

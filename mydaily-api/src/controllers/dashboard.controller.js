@@ -10,7 +10,6 @@ function startOfToday() {
   return d;
 }
 
-
 function startOfMonth() {
   const d = new Date();
   d.setDate(1);
@@ -23,7 +22,10 @@ function startOfMonth() {
 ========================= */
 const basic = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    const userId = req.user?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "UNAUTHORIZED", message: "Missing user in token" });
+    }
 
     const todayStart = startOfToday();
     const tomorrowStart = new Date(todayStart);
@@ -33,51 +35,49 @@ const basic = async (req, res) => {
     const nextMonthStart = new Date(monthStart);
     nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
 
-    const [totalTasksToday, completedTasksToday, spendingThisMonth] =
-      await Promise.all([
-        prisma.tasks.count({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            created_at: { gte: todayStart, lt: tomorrowStart },
-          },
-        }),
-        prisma.tasks.count({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            is_completed: true,
-            created_at: { gte: todayStart, lt: tomorrowStart },
-          },
-        }),
-        prisma.expenses.aggregate({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            expense_date: { gte: monthStart, lt: nextMonthStart },
-          },
-          _sum: { amount: true },
-        }),
-      ]);
+    const [totalTasksToday, completedTasksToday, spendingThisMonth] = await Promise.all([
+      prisma.task.count({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          created_at: { gte: todayStart, lt: tomorrowStart },
+        },
+      }),
+      prisma.task.count({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          is_completed: true,
+          created_at: { gte: todayStart, lt: tomorrowStart },
+        },
+      }),
+      // FIX: expense (NOT expenses)
+      prisma.expense.aggregate({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          expense_date: { gte: monthStart, lt: nextMonthStart },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
 
     const completionRate =
-      totalTasksToday === 0
-        ? 0
-        : Math.round((completedTasksToday / totalTasksToday) * 100);
+      totalTasksToday === 0 ? 0 : Math.round((completedTasksToday / totalTasksToday) * 100);
 
     res.json({
-      tier: req.user.accountType,
+      tier: req.user?.account_type ?? req.user?.accountType ?? "FREE",
       tasksToday: {
         total: totalTasksToday,
         completed: completedTasksToday,
         completionRatePercent: completionRate,
       },
       financeThisMonth: {
-        spendingTotal: spendingThisMonth._sum.amount ?? 0,
+        spendingTotal: spendingThisMonth?._sum?.amount ?? 0,
       },
     });
   } catch (err) {
-    console.error(err);
+    console.error("DASHBOARD_BASIC_ERROR:", err);
     res.status(500).json({ message: "Dashboard basic error" });
   }
 };
@@ -87,8 +87,11 @@ const basic = async (req, res) => {
 ========================= */
 const financeSummary = async (req, res) => {
   try {
-    const userId = req.user.sub;
-    // Optional: allow clients to query a specific month/year for reports
+    const userId = req.user?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "UNAUTHORIZED", message: "Missing user in token" });
+    }
+
     const querySchema = z.object({
       month: z.coerce.number().int().min(1).max(12).optional(),
       year: z.coerce.number().int().min(1970).max(3000).optional(),
@@ -102,13 +105,14 @@ const financeSummary = async (req, res) => {
     }
 
     const now = new Date();
-    const month = parsedQ.data.month ?? (now.getMonth() + 1);
+    const month = parsedQ.data.month ?? now.getMonth() + 1;
     const year = parsedQ.data.year ?? now.getFullYear();
 
     const rangeStart = new Date(year, month - 1, 1);
     const rangeEnd = new Date(year, month, 1);
 
-    const totalExpense = await prisma.expenses.aggregate({
+    // FIX: expense (NOT expenses)
+    const totalExpense = await prisma.expense.aggregate({
       _sum: { amount: true },
       where: {
         user_id: userId,
@@ -117,7 +121,8 @@ const financeSummary = async (req, res) => {
       },
     });
 
-    const byCategory = await prisma.expenses.groupBy({
+    // FIX: expense (NOT expenses)
+    const byCategory = await prisma.expense.groupBy({
       by: ["category_id"],
       _sum: { amount: true },
       where: {
@@ -127,13 +132,15 @@ const financeSummary = async (req, res) => {
       },
     });
 
-    const budget = await prisma.budgets.findFirst({
+    // FIX: budget (NOT budgets)
+    const budget = await prisma.budget.findFirst({
       where: { user_id: userId, month, year, deleted_at: null },
     });
 
-    const total = Number(totalExpense._sum.amount || 0);
+    const total = Number(totalExpense?._sum?.amount || 0);
     const limit = budget ? Number(budget.limit_amount) : 0;
     const percentUsed = limit > 0 ? total / limit : null;
+
     const alert = {
       status:
         limit === 0
@@ -160,7 +167,7 @@ const financeSummary = async (req, res) => {
       expenseByCategory: byCategory,
     });
   } catch (err) {
-    console.error(err);
+    console.error("FINANCE_SUMMARY_ERROR:", err);
     res.status(500).json({ message: "Finance summary error" });
   }
 };

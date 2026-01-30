@@ -196,8 +196,8 @@ const getTasks = async (req, res) => {
   const take = q.pageSize;
 
   const [total, items] = await Promise.all([
-    prisma.tasks.count({ where }),
-    prisma.tasks.findMany({
+    prisma.task.count({ where }),
+    prisma.task.findMany({
       where,
       orderBy,
       skip,
@@ -244,7 +244,7 @@ const createTask = async (req, res) => {
     const from = startOfToday();
     const to = endOfToday();
 
-    const createdToday = await prisma.tasks.count({
+    const createdToday = await prisma.task.count({
       where: {
         user_id: userId,
         deleted_at: null,
@@ -266,7 +266,7 @@ const createTask = async (req, res) => {
     }
   }
 
-  const task = await prisma.tasks.create({
+  const task = await prisma.task.create({
     data: {
       id: uuid(),
       title: data.title,
@@ -306,7 +306,7 @@ const updateTask = async (req, res) => {
     });
   }
 
-  const existing = await prisma.tasks.findFirst({
+  const existing = await prisma.task.findFirst({
     where: { id, user_id: userId, deleted_at: null },
     select: { id: true },
   });
@@ -318,7 +318,7 @@ const updateTask = async (req, res) => {
     });
   }
 
-  const updated = await prisma.tasks.update({
+  const updated = await prisma.task.update({
     where: { id },
     data: {
       ...(patch.title !== undefined ? { title: patch.title } : {}),
@@ -346,7 +346,7 @@ const deleteTask = async (req, res) => {
   const userId = req.user.sub;
   const { id } = req.params;
 
-  const existing = await prisma.tasks.findFirst({
+  const existing = await prisma.task.findFirst({
     where: { id, user_id: userId, deleted_at: null },
     select: { id: true },
   });
@@ -358,7 +358,7 @@ const deleteTask = async (req, res) => {
     });
   }
 
-  await prisma.tasks.update({
+  await prisma.task.update({
     where: { id },
     data: { deleted_at: new Date() },
   });

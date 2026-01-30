@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { Link } from "react-router-dom";
 
 export default function Register() {
   const [name, setName] = useState("Test User");
@@ -8,6 +8,8 @@ export default function Register() {
   const [password, setPassword] = useState("123456");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +19,7 @@ export default function Register() {
     try {
       const res = await api.post("/auth/register", { name, email, password });
       localStorage.setItem("token", res.data.token);
-      window.location.href = "/dashboard";
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -31,8 +33,8 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-shell">
-      <div className="card pad-lg" style={{ width: "100%", maxWidth: 520 }}>
+    <div className="page">
+      <div className="card pad-lg login-box" style={{ width: "100%", maxWidth: 520 }}>
         <div style={{ marginBottom: 14 }}>
           <h1 className="h1">Tạo tài khoản</h1>
           <p className="p-muted">Bắt đầu quản lý công việc và chi tiêu ngay hôm nay.</p>
@@ -77,17 +79,17 @@ export default function Register() {
 
           <div className="field">
             <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create account"}
+              {loading ? "Creating..." : "Tạo Tài Khoản"}
             </button>
           </div>
 
           {error && <div className="alert">{error}</div>}
 
           <p className="p-muted" style={{ marginTop: 12 }}>
-            Bạn đã có tài khoản?{" "} <Link to="/login">Sign in</Link>
-
-            <a href="/login" style={{ color: "var(--primary-dark)", fontWeight: 700 }}>
-            </a>
+            Bạn đã có tài khoản?{" "}
+            <Link to="/login" style={{ color: "var(--primary-dark)", fontWeight: 700 }}>
+              Đăng nhập
+            </Link>
           </p>
         </form>
       </div>

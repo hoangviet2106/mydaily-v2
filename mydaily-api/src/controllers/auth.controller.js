@@ -18,16 +18,19 @@ const loginSchema = z.object({
 
 // ===== Helpers =====
 function signToken(user) {
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
   return jwt.sign(
-    { sub: user.id, email: user.email, accountType: user.account_type },
+    { sub: user.id, email: user.email, accountType: user.account_type, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
 }
 
 // ===== Controllers =====
-exports.register = async (req, res) => {
-  const parsed = registerSchema.safeParse(req.body);
+exports.register = async (req, res, next) => {
+
+    try {
+      const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
       error: "VALIDATION_ERROR",
@@ -37,7 +40,7 @@ exports.register = async (req, res) => {
 
   const { email, password, name } = parsed.data;
 
-  const existing = await prisma.users.findFirst({
+  const existing = await prisma.user.findFirst({
     where: { email, deleted_at: null },
   });
 
@@ -51,9 +54,8 @@ exports.register = async (req, res) => {
   const rounds = Number(process.env.BCRYPT_ROUNDS || 10);
   const passwordHash = await bcrypt.hash(password, rounds);
 
-  const user = await prisma.users.create({
+  const user = await prisma.user.create({
     data: {
-      id: crypto.randomUUID(),
       email,
       password: passwordHash,
       name,
@@ -64,16 +66,21 @@ exports.register = async (req, res) => {
       email: true,
       name: true,
       account_type: true,
+        role: true,     
       created_at: true,
     },
   });
 
   const token = signToken(user);
   return res.status(201).json({ user, token });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.login = async (req, res) => {
-  const parsed = loginSchema.safeParse(req.body);
+exports.login = async (req, res, next) => {
+   try {
+     const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
       error: "VALIDATION_ERROR",
@@ -83,7 +90,7 @@ exports.login = async (req, res) => {
 
   const { email, password } = parsed.data;
 
-  const user = await prisma.users.findFirst({
+  const user = await prisma.user.findFirst({
     where: { email, deleted_at: null },
   });
 
@@ -93,6 +100,13 @@ exports.login = async (req, res) => {
       message: "Wrong email or password",
     });
   }
+  
+  if (user.is_banned) {
+  return res.status(403).json({
+    error: "BANNED",
+    message: "Account has been banned",
+  });
+}
 
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) {
@@ -110,8 +124,12 @@ exports.login = async (req, res) => {
       email: user.email,
       name: user.name,
       account_type: user.account_type,
+          role: user.role,     
       created_at: user.created_at,
     },
     token,
   });
+  } catch (err) {
+    next(err);
+  }
 };

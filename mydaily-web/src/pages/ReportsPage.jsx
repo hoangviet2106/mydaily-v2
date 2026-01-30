@@ -49,13 +49,23 @@ function PremiumLock({ title }) {
       <div className="row" style={{ justifyContent: "space-between", gap: 12, alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 900 }}>{title}</div>
-          <div className="p-muted">Biểu đồ là tính năng Premium. Nâng cấp để xem trực quan và nhận insight nhanh.</div>
+          <div className="p-muted">
+            Biểu đồ là tính năng Premium. Nâng cấp để xem trực quan và nhận insight nhanh.
+          </div>
         </div>
-        <button className="btn btn--primary" type="button">
+        <button className="btn btn-primary" type="button">
           Nâng cấp premium
         </button>
       </div>
-      <div style={{ marginTop: 12, height: 220, borderRadius: 12, background: "var(--bg2)", opacity: 0.35 }} />
+      <div
+        style={{
+          marginTop: 12,
+          height: 220,
+          borderRadius: 12,
+          background: "rgba(0,0,0,0.04)",
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}
+      />
     </div>
   );
 }
@@ -105,7 +115,7 @@ function BreakdownChart({ rows }) {
             <XAxis dataKey="name" hide />
             <YAxis tickFormatter={(v) => formatMoney(v)} />
             <Tooltip formatter={(v) => `${formatMoney(v)} VNĐ`} />
-            <Bar dataKey="total" fill="#22c55e" />
+            <Bar dataKey="total" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -124,7 +134,7 @@ function TopCategoriesChart({ rows, title = "Top categories (Bar chart)" }) {
   }));
   if (!data.length) return null;
 
-  // Top 5: màu riêng theo rank (đẹp + dễ nhìn)
+  // màu theo rank (gọn & dễ đọc)
   const colors = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#a855f7"];
 
   return (
@@ -153,8 +163,7 @@ function TopCategoriesChart({ rows, title = "Top categories (Bar chart)" }) {
   );
 }
 
-
-/* ===================== NEW: Comparison Gauge ===================== */
+/* ===================== Comparison Gauge ===================== */
 function ComparisonGauge({ comparison }) {
   const limit = Number(comparison?.limit || 0);
   const actual = Number(comparison?.actual || 0);
@@ -166,9 +175,12 @@ function ComparisonGauge({ comparison }) {
   const band = percent >= 100 ? "danger" : percent >= 80 ? "warn" : "ok";
   const width = Math.min(100, Math.max(0, percent));
 
-  const bg = "var(--bg2)";
   const fill =
-    band === "danger" ? "var(--danger)" : band === "warn" ? "var(--warn)" : "var(--primary)";
+    band === "danger"
+      ? "rgba(227, 93, 106, 0.85)"
+      : band === "warn"
+      ? "rgba(201, 195, 141, 0.95)"
+      : "rgba(111, 174, 164, 0.95)";
 
   return (
     <div className="card" style={{ marginTop: 14, padding: 14 }}>
@@ -183,7 +195,15 @@ function ComparisonGauge({ comparison }) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <div style={{ height: 14, borderRadius: 999, background: bg, overflow: "hidden" }}>
+        <div
+          style={{
+            height: 14,
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.06)",
+            overflow: "hidden",
+            border: "1px solid rgba(0,0,0,0.08)",
+          }}
+        >
           <div style={{ height: "100%", width: `${width}%`, borderRadius: 999, background: fill }} />
         </div>
 
@@ -207,7 +227,7 @@ function ComparisonGauge({ comparison }) {
   );
 }
 
-/* ===================== NEW: Periodic Q1–Q4 Chart ===================== */
+/* ===================== Periodic Q1–Q4 Chart ===================== */
 function PeriodicChart({ rows, year }) {
   const raw = rows || [];
 
@@ -235,15 +255,13 @@ function PeriodicChart({ rows, year }) {
   const hasAny = data.some((d) => d.total > 0);
   if (!hasAny) return null;
 
-  // Ngưỡng theo "tỷ lệ so với max" để phù hợp mọi dataset (không hardcode 5tr/10tr)
   const max = Math.max(...data.map((d) => d.total), 0);
   const getFill = (v) => {
-    if (max <= 0) return "#22c55e"; // fallback
+    if (max <= 0) return "rgba(111, 174, 164, 0.9)";
     const ratio = v / max;
-    // Cao nhất: đỏ; trung bình: vàng; thấp: xanh
-    if (ratio >= 0.75) return "#ef4444";
-    if (ratio >= 0.45) return "#f59e0b";
-    return "#22c55e";
+    if (ratio >= 0.75) return "rgba(227, 93, 106, 0.85)";
+    if (ratio >= 0.45) return "rgba(201, 195, 141, 0.95)";
+    return "rgba(111, 174, 164, 0.95)";
   };
 
   return (
@@ -271,7 +289,6 @@ function PeriodicChart({ rows, year }) {
     </div>
   );
 }
-
 
 /* ===================== Page ===================== */
 export default function ReportsPage() {
@@ -334,7 +351,10 @@ export default function ReportsPage() {
       setTopCats(top);
     } catch (err) {
       const msg =
-        err?.response?.data?.message || err?.response?.data?.error || err?.message || "Failed to load reports.";
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to load reports.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -354,7 +374,9 @@ export default function ReportsPage() {
         <div className="banner banner--neutral">
           <div className="banner__left">
             <div className="banner__title">Chưa có Ngân sách</div>
-            <div className="banner__sub">Tạo ngân sách cho tháng này để so sánh Ngân sách vs Chi tiêu.</div>
+            <div className="banner__sub">
+              Tạo ngân sách cho tháng này để so sánh Ngân sách vs Chi tiêu.
+            </div>
           </div>
         </div>
       );
@@ -383,410 +405,410 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="card pad-lg reportWide">
-      <div className="row" style={{ alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ margin: 0 }}>Finance Reports</h3>
-          <p className="p-muted">Tổng hợp báo cáo: breakdown, Ngân sách vs chi tiêu, xu hướng, Định kỳ và top chi phí.</p>
-        </div>
-
-        <div className="row">
-          <button className="btn" onClick={loadAll} disabled={loading}>
-            Tải lại trang
-          </button>
-        </div>
-      </div>
-
-      {error ? <div className="alert">{error}</div> : null}
-
-      <div className="toolbar" style={{ marginTop: 10 }}>
-        <div className="toolbar__left">
-          <div className="toolbar__group">
-            <label className="label" style={{ margin: 0 }}>
-              Month
-            </label>
-            <select className="input input--sm" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-              {Array.from({ length: 12 }).map((_, i) => {
-                const m = i + 1;
-                return (
-                  <option key={m} value={m}>
-                    {pad2(m)}
-                  </option>
-                );
-              })}
-            </select>
-
-            <label className="label" style={{ margin: 0 }}>
-              Year
-            </label>
-            <input
-              className="input input--sm"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              inputMode="numeric"
-              style={{ width: 110 }}
-            />
-          </div>
-        </div>
-
-        <div className="toolbar__right">
-          <div className="stat">
-            <div className="stat__label">Tổng tiền của tháng</div>
-            <div className="stat__value">{formatMoney(breakdown.grandTotal)} VNĐ</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="tabs">
-        <Tab active={tab === "breakdown"} onClick={() => setTab("breakdown")}>
-          Thông số
-        </Tab>
-        <Tab active={tab === "comparison"} onClick={() => setTab("comparison")}>
-          So sánh
-        </Tab>
-        <Tab active={tab === "trend"} onClick={() => setTab("trend")}>
-          Xu hướng
-        </Tab>
-        <Tab active={tab === "periodic"} onClick={() => setTab("periodic")}>
-          Chu kỳ
-        </Tab>
-        <Tab active={tab === "analysis"} onClick={() => setTab("analysis")}>
-          Xếp hạng
-        </Tab>
-      </div>
-
-      {loading ? (
-        <div className="skeleton">Loading reports…</div>
-      ) : (
-        <>
-          <div className="reportHead">
-            <div>
-              <div className="reportTitle">{headerTitle}</div>
-              <div className="p-muted">
-                Tháng {pad2(Number(month))}/{year}
-              </div>
+    <div className="pageWidth">
+      <div className="card pad-lg">
+        {/* Header */}
+        <div className="dashHeader">
+          <div>
+            <div className="pageTitle">Finance Reports</div>
+            <div className="dashDate">
+              Tổng hợp báo cáo: breakdown, Ngân sách vs chi tiêu, xu hướng, Định kỳ và top chi phí.
             </div>
           </div>
 
-          {/* Breakdown */}
-          {tab === "breakdown" ? (
-            <>
-              <div className="cards3" style={{ marginTop: 14 }}>
-                <div className="mini">
-                  <div className="mini__label">Tổng tiền</div>
-                  <div className="mini__value">{formatMoney(breakdown.grandTotal)} VNĐ</div>
-                  <div className="mini__hint">Tổng chi theo tháng</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Loại chi phí</div>
-                  <div className="mini__value">{breakdown.rows.length}</div>
-                  <div className="mini__hint">Số chi phí có phát sinh chi tiêu</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Insight</div>
-                  <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
-                    Breakdown giúp bạn thấy loại chi phí nào chiếm tỷ trọng lớn để tối ưu chi tiêu.
-                  </div>
+          <div className="pageActions">
+            <button className="btn" onClick={loadAll} disabled={loading}>
+              Tải lại trang
+            </button>
+          </div>
+        </div>
+
+        {error ? <div className="alert">{error}</div> : null}
+
+        {/* Filter bar */}
+        <div className="toolbar" style={{ marginTop: 10 }}>
+          <div className="toolbar__left">
+            <div className="toolbar__group">
+              <label className="label" style={{ margin: 0 }}>
+                Month
+              </label>
+              <select className="input input--sm" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const m = i + 1;
+                  return (
+                    <option key={m} value={m}>
+                      {pad2(m)}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <label className="label" style={{ margin: 0 }}>
+                Year
+              </label>
+              <input
+                className="input input--sm"
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                inputMode="numeric"
+                style={{ width: 110 }}
+              />
+            </div>
+          </div>
+
+          <div className="toolbar__right">
+            <div className="stat">
+              <div className="stat__label">Tổng tiền của tháng</div>
+              <div className="stat__value">{formatMoney(breakdown.grandTotal)} VNĐ</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="tabs">
+          <Tab active={tab === "breakdown"} onClick={() => setTab("breakdown")}>
+            Thông số
+          </Tab>
+          <Tab active={tab === "comparison"} onClick={() => setTab("comparison")}>
+            So sánh
+          </Tab>
+          <Tab active={tab === "trend"} onClick={() => setTab("trend")}>
+            Xu hướng
+          </Tab>
+          <Tab active={tab === "periodic"} onClick={() => setTab("periodic")}>
+            Chu kỳ
+          </Tab>
+          <Tab active={tab === "analysis"} onClick={() => setTab("analysis")}>
+            Xếp hạng
+          </Tab>
+        </div>
+
+        {loading ? (
+          <div className="skeleton">Loading reports…</div>
+        ) : (
+          <>
+            <div className="reportHead">
+              <div>
+                <div className="reportTitle">{headerTitle}</div>
+                <div className="p-muted">
+                  Tháng {pad2(Number(month))}/{year}
                 </div>
               </div>
+            </div>
 
-              {isPremium ? <BreakdownChart rows={breakdown.rows} /> : <PremiumLock title="Biểu đồ Breakdown (Premium)" />}
+            {/* Breakdown */}
+            {tab === "breakdown" ? (
+              <>
+                <div className="cards3" style={{ marginTop: 14 }}>
+                  <div className="mini">
+                    <div className="mini__label">Tổng tiền</div>
+                    <div className="mini__value">{formatMoney(breakdown.grandTotal)} VNĐ</div>
+                    <div className="mini__hint">Tổng chi theo tháng</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Loại chi phí</div>
+                    <div className="mini__value">{breakdown.rows.length}</div>
+                    <div className="mini__hint">Số chi phí có phát sinh chi tiêu</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Insight</div>
+                    <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
+                      Breakdown giúp bạn thấy loại chi phí nào chiếm tỷ trọng lớn để tối ưu chi tiêu.
+                    </div>
+                  </div>
+                </div>
 
-              <div className="table-wrap" style={{ marginTop: 14 }}>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Loại chi phí</th>
-                      <th style={{ width: 220, textAlign: "center" }}>Tổng tiền</th>
-                      <th style={{ width: 220, textAlign: "right" }}>Tỉ lệ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {breakdown.rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="td-muted">
-                          Không có dữ liệu tháng này.
-                        </td>
-                      </tr>
-                    ) : (
-                      breakdown.rows.map((r) => {
-                        const share = breakdown.grandTotal > 0 ? Math.round((r.total / breakdown.grandTotal) * 100) : 0;
-                        return (
-                          <tr key={r.category_id}>
-                            <td>{r.category}</td>
-                            <td className="mono" style={{ textAlign: "center", fontWeight: 900 }}>
-                              {formatMoney(r.total)} VNĐ
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              <span className="tag">{share}%</span>
+                {isPremium ? <BreakdownChart rows={breakdown.rows} /> : <PremiumLock title="Biểu đồ Breakdown (Premium)" />}
+
+                <div className="table-scroll" style={{ marginTop: 14 }}>
+                  <div className="table-wrap">
+                    <table className="table table__head-sticky">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 260 }}>Loại chi phí</th>
+                          <th style={{ width: 260, textAlign: "center" }}>Tổng tiền</th>
+                          <th style={{ width: 220, textAlign: "right" }}>Tỉ lệ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {breakdown.rows.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="td-muted">
+                              Không có dữ liệu tháng này.
                             </td>
                           </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : null}
-
-          {/* Comparison */}
-          {tab === "comparison" ? (
-            <>
-              <BannerComparison />
-
-              {isPremium ? (
-                <ComparisonGauge comparison={comparison} />
-              ) : (
-                <PremiumLock title="Gauge/Progress Budget Usage (Premium)" />
-              )}
-
-              <div className="cards3" style={{ marginTop: 14 }}>
-                <div className="mini">
-                  <div className="mini__label">Ngân sách</div>
-                  <div className="mini__value">{comparison.limit ? formatMoney(comparison.limit) : "—"} VNĐ</div>
-                  <div className="mini__hint">Ngân sách tháng</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Chi tiêu</div>
-                  <div className="mini__value">{formatMoney(comparison.actual)} VNĐ</div>
-                  <div className="mini__hint">Tổng chi thực tế</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Mức độ sử dụng</div>
-                  <div className="mini__value">{comparison.limit ? `${comparison.percent}%` : "—"}</div>
-                  <div className="progress">
-                    <div className="progress__bar" style={{ width: `${Math.min(100, comparison.percent)}%` }} />
-                  </div>
-                  <div className="mini__hint">Tỷ lệ sử dụng ngân sách</div>
-                </div>
-              </div>
-
-              {/* giữ nguyên bảng */}
-              <div className="table-wrap" style={{ marginTop: 14 }}>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Thời gian</th>
-                      <th style={{ width: 220 }}>Ngân sách</th>
-                      <th style={{ width: 220 }}>Chi tiêu</th>
-                      <th>Mức độ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="mono">
-                        {pad2(Number(month))}/{year}
-                      </td>
-                      <td className="mono" style={{ fontWeight: 900 }}>
-                        {comparison.limit ? formatMoney(comparison.limit) : "—"}
-                      </td>
-                      <td className="mono" style={{ fontWeight: 900 }}>
-                        {formatMoney(comparison.actual)}
-                      </td>
-                      <td className="td-muted">
-                        {comparison.limit
-                          ? comparison.percent >= 100
-                            ? "Over budget"
-                            : comparison.percent >= 80
-                              ? "Warning"
-                              : "OK"
-                          : "No budget configured"}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : null}
-
-          {/* Trend */}
-          {tab === "trend" ? (
-            <>
-              <div className="cards3" style={{ marginTop: 14 }}>
-                <div className="mini">
-                  <div className="mini__label">Xu hướng</div>
-                  <div className="mini__value">6 tháng</div>
-                  <div className="mini__hint">Xu hướng chi tiêu gần đây</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Lần gần nhất chi tiêu</div>
-                  <div className="mini__value">
-                    {trend.rows.length ? formatMoney(trend.rows[trend.rows.length - 1].total) : "—"} VNĐ
-                  </div>
-                  <div className="mini__hint">Tổng chi tháng gần nhất</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Insight</div>
-                  <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
-                    Nếu Xu hướng tăng liên tục, cân nhắc giới hạn chi theo loại chi phí hoặc tăng Ngân sách hợp lý.
+                        ) : (
+                          breakdown.rows.map((r) => {
+                            const share =
+                              breakdown.grandTotal > 0
+                                ? Math.round((Number(r.total || 0) / breakdown.grandTotal) * 100)
+                                : 0;
+                            return (
+                              <tr key={r.category_id}>
+                                <td>{r.category}</td>
+                                <td className="mono" style={{ textAlign: "center", fontWeight: 900 }}>
+                                  {formatMoney(r.total)} VNĐ
+                                </td>
+                                <td style={{ textAlign: "right" }}>
+                                  <span className="tag">{share}%</span>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              </div>
+              </>
+            ) : null}
 
-              {isPremium ? <TrendChart rows={trend.rows} /> : <PremiumLock title="Biểu đồ Trend (Premium)" />}
+            {/* Comparison */}
+            {tab === "comparison" ? (
+              <>
+                <BannerComparison />
 
-              {/* giữ nguyên bảng */}
-              <div className="table-wrap" style={{ marginTop: 14 }}>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Tháng</th>
-                      <th style={{ width: 260, textAlign: "right" }}>Tổng tiền</th>
-                      <th>Chỉ số</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trend.rows.map((r) => (
-                      <tr key={r.key}>
-                        <td className="mono">{r.key}</td>
-                        <td className="mono" style={{ textAlign: "right", fontWeight: 900 }}>
-                          {formatMoney(r.total)} VNĐ
-                        </td>
-                        <td className="td-muted">
-                          <div className="spark">
-                            <div
-                              className="spark__bar"
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  (Number(r.total || 0) /
-                                    Math.max(1, Math.max(...trend.rows.map((x) => Number(x.total || 0))))) *
-                                  100
-                                )}%`,
-                              }}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : null}
+                {isPremium ? <ComparisonGauge comparison={comparison} /> : <PremiumLock title="Gauge Budget Usage (Premium)" />}
 
-          {/* Periodic */}
-          {tab === "periodic" ? (
-            <>
-              <div className="cards3" style={{ marginTop: 14 }}>
-                <div className="mini">
-                  <div className="mini__label">Năm</div>
-                  <div className="mini__value">{periodic.year}</div>
-                  <div className="mini__hint">Tổng hợp theo quý</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Tổng Năm</div>
-                  <div className="mini__value">{formatMoney(periodic.rows.reduce((s, r) => s + Number(r.total || 0), 0))} VNĐ</div>
-                  <div className="mini__hint">Tổng chi cả năm</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Insight</div>
-                  <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
-                    Periodic report hữu ích để so sánh các quý và đánh giá biến động dài hạn.
+                <div className="cards3" style={{ marginTop: 14 }}>
+                  <div className="mini">
+                    <div className="mini__label">Ngân sách</div>
+                    <div className="mini__value">{comparison.limit ? formatMoney(comparison.limit) : "—"} VNĐ</div>
+                    <div className="mini__hint">Ngân sách tháng</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Chi tiêu</div>
+                    <div className="mini__value">{formatMoney(comparison.actual)} VNĐ</div>
+                    <div className="mini__hint">Tổng chi thực tế</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Mức độ sử dụng</div>
+                    <div className="mini__value">{comparison.limit ? `${comparison.percent}%` : "—"}</div>
+                    <div className="progress">
+                      <div className="progress__bar" style={{ width: `${Math.min(100, comparison.percent)}%` }} />
+                    </div>
+                    <div className="mini__hint">Tỷ lệ sử dụng ngân sách</div>
                   </div>
                 </div>
-              </div>
 
-              {isPremium ? (
-                <PeriodicChart rows={periodic.rows} year={periodic.year} />
-              ) : (
-                <PremiumLock title="Biểu đồ Q1–Q4 (Premium)" />
-              )}
-
-              {/* giữ nguyên bảng */}
-              <div className="table-wrap" style={{ marginTop: 14 }}>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Thời gian</th>
-                      <th style={{ width: 260, textAlign: "right" }}>Tổng tiền</th>
-                      <th style={{ width: 260, textAlign: "center" }}>Ghi chú</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {periodic.rows.map((r) => (
-                      <tr key={r.period}>
-                        <td className="mono">{r.period}</td>
-                        <td className="mono" style={{ textAlign: "right", fontWeight: 900 }}>
-                          {formatMoney(r.total)} VNĐ
-                        </td>
-                        <td className="td-muted" style={{ textAlign: "center" }}>
-                          -Tiền Quý-
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : null}
-
-          {/* Analysis */}
-          {tab === "analysis" ? (
-            <>
-              <div className="cards3" style={{ marginTop: 14 }}>
-                <div className="mini">
-                  <div className="mini__label">Top</div>
-                  <div className="mini__value">5</div>
-                  <div className="mini__hint">Loại chi phí tốn tiền nhất</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Tổng tiền tháng</div>
-                  <div className="mini__value">{formatMoney(breakdown.grandTotal)} VNĐ</div>
-                  <div className="mini__hint">Tổng chi tháng</div>
-                </div>
-                <div className="mini">
-                  <div className="mini__label">Insight</div>
-                  <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
-                    Tập trung tối ưu top categories thường mang lại hiệu quả tiết kiệm lớn nhất.
-                  </div>
-                </div>
-              </div>
-
-              {isPremium ? (
-                <TopCategoriesChart rows={topCats.rows} title="Top 5 categories (Bar chart)" />
-              ) : (
-                <PremiumLock title="Biểu đồ Top 5 (Premium)" />
-              )}
-
-              {/* giữ nguyên bảng */}
-              <div className="table-wrap" style={{ marginTop: 14 }}>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 260 }}>Loại chi phí</th>
-                      <th style={{ width: 260, textAlign: "center" }}>Tổng tiền</th>
-                      <th style={{ width: 220, textAlign: "right" }}>Xếp hạng</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topCats.rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="td-muted">
-                          Không có dữ liệu tháng này.
-                        </td>
-                      </tr>
-                    ) : (
-                      topCats.rows.map((r, idx) => (
-                        <tr key={r.category_id}>
-                          <td>{r.category}</td>
-                          <td className="mono" style={{ textAlign: "center", fontWeight: 900 }}>
-                            {formatMoney(r.total)} VNĐ
+                <div className="table-scroll" style={{ marginTop: 14 }}>
+                  <div className="table-wrap">
+                    <table className="table table__head-sticky">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 220 }}>Thời gian</th>
+                          <th style={{ width: 220 }}>Ngân sách</th>
+                          <th style={{ width: 220 }}>Chi tiêu</th>
+                          <th>Mức độ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="mono">
+                            {pad2(Number(month))}/{year}
                           </td>
-                          <td style={{ textAlign: "right" }}>
-                            <span className="tag">#{idx + 1}</span>
+                          <td className="mono" style={{ fontWeight: 900 }}>
+                            {comparison.limit ? formatMoney(comparison.limit) : "—"}
+                          </td>
+                          <td className="mono" style={{ fontWeight: 900 }}>
+                            {formatMoney(comparison.actual)}
+                          </td>
+                          <td className="td-muted">
+                            {comparison.limit
+                              ? comparison.percent >= 100
+                                ? "Over budget"
+                                : comparison.percent >= 80
+                                  ? "Warning"
+                                  : "OK"
+                              : "No budget configured"}
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : null}
-        </>
-      )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {/* Trend */}
+            {tab === "trend" ? (
+              <>
+                <div className="cards3" style={{ marginTop: 14 }}>
+                  <div className="mini">
+                    <div className="mini__label">Xu hướng</div>
+                    <div className="mini__value">6 tháng</div>
+                    <div className="mini__hint">Xu hướng chi tiêu gần đây</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Tháng gần nhất</div>
+                    <div className="mini__value">
+                      {trend.rows.length ? formatMoney(trend.rows[trend.rows.length - 1].total) : "—"} VNĐ
+                    </div>
+                    <div className="mini__hint">Tổng chi tháng gần nhất</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Insight</div>
+                    <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
+                      Nếu xu hướng tăng liên tục, cân nhắc giới hạn chi theo loại chi phí hoặc tăng ngân sách hợp lý.
+                    </div>
+                  </div>
+                </div>
+
+                {isPremium ? <TrendChart rows={trend.rows} /> : <PremiumLock title="Biểu đồ Trend (Premium)" />}
+
+                <div className="table-scroll" style={{ marginTop: 14 }}>
+                  <div className="table-wrap">
+                    <table className="table table__head-sticky">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 220 }}>Tháng</th>
+                          <th style={{ width: 260, textAlign: "right" }}>Tổng tiền</th>
+                          <th>Chỉ số</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trend.rows.map((r) => {
+                          const max = Math.max(1, ...trend.rows.map((x) => Number(x.total || 0)));
+                          const pct = Math.min(100, (Number(r.total || 0) / max) * 100);
+                          return (
+                            <tr key={r.key}>
+                              <td className="mono">{r.key}</td>
+                              <td className="mono" style={{ textAlign: "right", fontWeight: 900 }}>
+                                {formatMoney(r.total)} VNĐ
+                              </td>
+                              <td className="td-muted">
+                                <div className="spark">
+                                  <div className="spark__bar" style={{ width: `${pct}%` }} />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {/* Periodic */}
+            {tab === "periodic" ? (
+              <>
+                <div className="cards3" style={{ marginTop: 14 }}>
+                  <div className="mini">
+                    <div className="mini__label">Năm</div>
+                    <div className="mini__value">{periodic.year}</div>
+                    <div className="mini__hint">Tổng hợp theo quý</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Tổng năm</div>
+                    <div className="mini__value">
+                      {formatMoney(periodic.rows.reduce((s, r) => s + Number(r.total || 0), 0))} VNĐ
+                    </div>
+                    <div className="mini__hint">Tổng chi cả năm</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Insight</div>
+                    <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
+                      Periodic report hữu ích để so sánh các quý và đánh giá biến động dài hạn.
+                    </div>
+                  </div>
+                </div>
+
+                {isPremium ? <PeriodicChart rows={periodic.rows} year={periodic.year} /> : <PremiumLock title="Biểu đồ Q1–Q4 (Premium)" />}
+
+                <div className="table-scroll" style={{ marginTop: 14 }}>
+                  <div className="table-wrap">
+                    <table className="table table__head-sticky">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 220 }}>Thời gian</th>
+                          <th style={{ width: 260, textAlign: "right" }}>Tổng tiền</th>
+                          <th style={{ width: 260, textAlign: "center" }}>Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {periodic.rows.map((r) => (
+                          <tr key={r.period}>
+                            <td className="mono">{r.period}</td>
+                            <td className="mono" style={{ textAlign: "right", fontWeight: 900 }}>
+                              {formatMoney(r.total)} VNĐ
+                            </td>
+                            <td className="td-muted" style={{ textAlign: "center" }}>
+                              — 
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {/* Analysis */}
+            {tab === "analysis" ? (
+              <>
+                <div className="cards3" style={{ marginTop: 14 }}>
+                  <div className="mini">
+                    <div className="mini__label">Top</div>
+                    <div className="mini__value">5</div>
+                    <div className="mini__hint">Loại chi phí tốn tiền nhất</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Tổng tiền tháng</div>
+                    <div className="mini__value">{formatMoney(breakdown.grandTotal)} VNĐ</div>
+                    <div className="mini__hint">Tổng chi tháng</div>
+                  </div>
+                  <div className="mini">
+                    <div className="mini__label">Insight</div>
+                    <div className="mini__value" style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>
+                      Tập trung tối ưu top categories thường mang lại hiệu quả tiết kiệm lớn nhất.
+                    </div>
+                  </div>
+                </div>
+
+                {isPremium ? <TopCategoriesChart rows={topCats.rows} title="Top 5 categories (Bar chart)" /> : <PremiumLock title="Biểu đồ Top 5 (Premium)" />}
+
+                <div className="table-scroll" style={{ marginTop: 14 }}>
+                  <div className="table-wrap">
+                    <table className="table table__head-sticky">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 260 }}>Loại chi phí</th>
+                          <th style={{ width: 260, textAlign: "center" }}>Tổng tiền</th>
+                          <th style={{ width: 220, textAlign: "right" }}>Xếp hạng</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topCats.rows.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="td-muted">
+                              Không có dữ liệu tháng này.
+                            </td>
+                          </tr>
+                        ) : (
+                          topCats.rows.map((r, idx) => (
+                            <tr key={r.category_id}>
+                              <td>{r.category}</td>
+                              <td className="mono" style={{ textAlign: "center", fontWeight: 900 }}>
+                                {formatMoney(r.total)} VNĐ
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <span className="tag">#{idx + 1}</span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -208,7 +208,6 @@ export default function ExpensesPage() {
   const total = useMemo(() => filtered.reduce((s, e) => s + Number(e.amount || 0), 0), [filtered]);
 
   const breakdown = useMemo(() => {
-    // top categories by sum (for the filtered month)
     const sums = new Map();
     for (const e of filtered) {
       sums.set(e.category_id, (sums.get(e.category_id) || 0) + Number(e.amount || 0));
@@ -313,197 +312,199 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="card pad-lg">
-      <div className="row" style={{ alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ margin: 0 }}>Expenses</h3>
-          <p className="p-muted">Quản lý chi tiêu theo tháng, category và ghi chú.</p>
-        </div>
-
-        <div className="row">
-          <button className="btn" onClick={load} disabled={loading}>
-            Tải lại trang
-          </button>
-          <button className="btn btn-primary" onClick={openCreate}>
-            + Thêm mới chi tiêu
-          </button>
-        </div>
-      </div>
-
-      <AlertBanner alert={alert} />
-
-      {error ? <div className="alert">{error}</div> : null}
-
-      <div className="toolbar">
-        <div className="toolbar__left">
-          <div className="toolbar__group">
-            <label className="label" style={{ margin: 0 }}>
-              Month
-            </label>
-            <select className="input input--sm" value={month} onChange={(e) => setMonth(e.target.value)}>
-              {Array.from({ length: 12 }).map((_, i) => {
-                const m = i + 1;
-                return (
-                  <option key={m} value={m}>
-                    {pad2(m)}
-                  </option>
-                );
-              })}
-            </select>
-
-            <label className="label" style={{ margin: 0 }}>
-              Year
-            </label>
-            <input
-              className="input input--sm"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              inputMode="numeric"
-              style={{ width: 110 }}
-            />
-          </div>
-
-          <div className="toolbar__group">
-            <label className="label" style={{ margin: 0 }}>
-              Loại
-            </label>
-            <select
-              className="input input--sm"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              style={{ minWidth: 200 }}
-            >
-              <option value="">All</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-
-            <input
-              className="input input--sm"
-              placeholder="Tìm kiếm..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              style={{ minWidth: 220 }}
-            />
-          </div>
-        </div>
-
-        <div className="toolbar__right">
-          <div className="stat">
-            <div className="stat__label">Tổng tiền</div>
-            <div className="stat__value">{formatMoney(total)} VNĐ</div>
-          </div>
-          <div className="stat">
-            <div className="stat__label">Số lượng</div>
-            <div className="stat__value">{filtered.length}</div>
-          </div>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="skeleton">Loading expenses…</div>
-      ) : filtered.length === 0 ? (
-        <div className="empty" style={{ marginTop: 12 }}>
-          
+    <div className="pageWidth">
+      <div className="card pad-lg">
+        {/* Header */}
+        <div className="dashHeader">
           <div>
-            <div className="empty__title">Chưa có giao dịch trong tháng này</div>
-            <div className="empty__subtitle">
-              Thử đổi Tháng/Năm, Loại chi phí hoặc tạo chi phí mới.
+            <div className="pageTitle">Expenses</div>
+            <div className="dashDate">Quản lý chi tiêu theo tháng, category và ghi chú.</div>
+          </div>
+
+          <div className="pageActions">
+            <button className="btn" onClick={load} disabled={loading}>
+              Tải lại trang
+            </button>
+            <button className="btn btn-primary" onClick={openCreate}>
+              + Thêm mới chi tiêu
+            </button>
+          </div>
+        </div>
+
+        <AlertBanner alert={alert} />
+
+        {error ? <div className="alert">{error}</div> : null}
+
+        <div className="toolbar">
+          <div className="toolbar__left">
+            <div className="toolbar__group">
+              <label className="label" style={{ margin: 0 }}>
+                Month
+              </label>
+              <select className="input input--sm" value={month} onChange={(e) => setMonth(e.target.value)}>
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const m = i + 1;
+                  return (
+                    <option key={m} value={m}>
+                      {pad2(m)}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <label className="label" style={{ margin: 0 }}>
+                Year
+              </label>
+              <input
+                className="input input--sm"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                inputMode="numeric"
+                style={{ width: 110 }}
+              />
+            </div>
+
+            <div className="toolbar__group">
+              <label className="label" style={{ margin: 0 }}>
+                Loại
+              </label>
+              <select
+                className="input input--sm"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                style={{ minWidth: 200 }}
+              >
+                <option value="">All</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                className="input input--sm"
+                placeholder="Tìm kiếm..."
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                style={{ minWidth: 220 }}
+              />
+            </div>
+          </div>
+
+          <div className="toolbar__right">
+            <div className="stat">
+              <div className="stat__label">Tổng tiền</div>
+              <div className="stat__value">{formatMoney(total)} VNĐ</div>
+            </div>
+            <div className="stat">
+              <div className="stat__label">Số lượng</div>
+              <div className="stat__value">{filtered.length}</div>
             </div>
           </div>
         </div>
-      ) : (
-        <>
-          <div className="cards3" style={{ marginTop: 14 }}>
-            <div className="mini">
-              <div className="mini__label">Tháng</div>
-              <div className="mini__value">
-                {pad2(Number(month))}/{year}
-              </div>
-            </div>
 
-            <div className="mini">
-              <div className="mini__label">Xếp hạng</div>
-              <div className="mini__value" style={{ fontSize: 13, fontWeight: 800 }}>
-                {breakdown.length ? (
-                  breakdown.map((x) => (
-                    <div key={x.cid} className="mini__row">
-                      <span className="tag">{x.name}</span>
-                      <span className="mono">{formatMoney(x.amt)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <span className="p-muted">—</span>
-                )}
-              </div>
-            </div>
-
-            <div className="mini">
-              <div className="mini__label">Quick tips</div>
-              <div className="mini__value" style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
-                Gợi ý: tạo Budget để hệ thống cảnh báo sắp/vượt ngân sách sau mỗi lần nhập chi.
-              </div>
+        {loading ? (
+          <div className="skeleton">Loading expenses…</div>
+        ) : filtered.length === 0 ? (
+          <div className="empty" style={{ marginTop: 12 }}>
+            <div>
+              <div className="empty__title">Chưa có giao dịch trong tháng này</div>
+              <div className="empty__subtitle">Thử đổi Tháng/Năm, Loại chi phí hoặc tạo chi phí mới.</div>
             </div>
           </div>
+        ) : (
+          <>
+            <div className="cards3" style={{ marginTop: 14 }}>
+              <div className="mini">
+                <div className="mini__label">Tháng</div>
+                <div className="mini__value">
+                  {pad2(Number(month))}/{year}
+                </div>
+              </div>
 
-          <div className="table-wrap table-scroll" style={{ marginTop: 14 }}>
-  <table className="table">
-    <thead className="table__head-sticky">
-      <tr>
-        <th style={{ width: 140 }}>Thời gian</th>
-        <th style={{ width: 140 }}>Loại </th>
-        <th style={{ width: 140 }}>Ghi chú</th>
-        <th style={{ width: 140, textAlign: "right" }}>Tổng tiền</th>
-        <th style={{ width: 140, textAlign: "right" }}> Hành động</th>
-      </tr>
-    </thead>
+              <div className="mini">
+                <div className="mini__label">Xếp hạng</div>
+                <div className="mini__value" style={{ fontSize: 13, fontWeight: 800 }}>
+                  {breakdown.length ? (
+                    breakdown.map((x) => (
+                      <div key={x.cid} className="mini__row">
+                        <span className="tag">{x.name}</span>
+                        <span className="mono">{formatMoney(x.amt)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="p-muted">—</span>
+                  )}
+                </div>
+              </div>
 
-    <tbody>
-      {filtered.map((e) => (
-        <tr key={e.id}>
-          <td className="mono">{e.expense_date.slice(0, 10)}</td>
-          <td>{catMap.get(e.category_id)?.name || "Unknown"}</td>
-          <td className="td-muted">{e.note || "—"}</td>
-          <td className="mono" style={{ textAlign: "right", fontWeight: 900 }}>
-            {formatMoney(e.amount)} VNĐ
-          </td>
-          <td style={{ textAlign: "right" }}>
-            <div className="row" style={{ justifyContent: "flex-end" }}>
-              <button className="btn btn-sm" onClick={() => openEdit(e)}>
-                Chỉnh Sửa
-              </button>
-              <button className="btn btn-sm btn-danger" onClick={() => handleDelete(e)}>
-                Xóa
-              </button>
+              <div className="mini">
+                <div className="mini__label">Quick tips</div>
+                <div className="mini__value" style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
+                  Gợi ý: tạo Budget để hệ thống cảnh báo sắp/vượt ngân sách sau mỗi lần nhập chi.
+                </div>
+              </div>
             </div>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
 
-        </>
-      )}
+            {/* ✅ FIX: single scroll + sticky header works */}
+            <div className="table-scroll" style={{ marginTop: 14 }}>
+              <div className="table-wrap">
+                <table className="table table__head-sticky">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 140 }}>Thời gian</th>
+                      <th style={{ width: 140 }}>Loại</th>
+                      <th>Ghi chú</th>
+                      <th style={{ width: 160, textAlign: "right" }}>Tổng tiền</th>
+                      <th style={{ width: 180, textAlign: "right" }}>Hành động</th>
+                    </tr>
+                  </thead>
 
-      <Modal
-        open={open}
-        title={mode === "edit" ? "Edit expense" : "Add expense"}
-        onClose={() => (submitting ? null : setOpen(false))}
-        footer={null}
-      >
-        <ExpenseForm
-          mode={mode}
-          categories={categories}
-          initialValue={editing}
-          submitting={submitting}
-          onSubmit={handleSave}
-          onCancel={() => setOpen(false)}
-        />
-      </Modal>
+                  <tbody>
+                    {filtered.map((e) => (
+                      <tr key={e.id}>
+                        <td className="mono">{e.expense_date.slice(0, 10)}</td>
+                        <td>{catMap.get(e.category_id)?.name || "Unknown"}</td>
+                        <td className="td-muted">{e.note || "—"}</td>
+                        <td className="mono" style={{ textAlign: "right", fontWeight: 900 }}>
+                          {formatMoney(e.amount)} VNĐ
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <div className="row" style={{ justifyContent: "flex-end" }}>
+                            <button className="btn btn-sm" onClick={() => openEdit(e)}>
+                              Chỉnh Sửa
+                            </button>
+                            <button className="btn btn-sm btn-danger" onClick={() => handleDelete(e)}>
+                              Xóa
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        <Modal
+          open={open}
+          title={mode === "edit" ? "Edit expense" : "Add expense"}
+          onClose={() => (submitting ? null : setOpen(false))}
+          footer={null}
+        >
+          <ExpenseForm
+            mode={mode}
+            categories={categories}
+            initialValue={editing}
+            submitting={submitting}
+            onSubmit={handleSave}
+            onCancel={() => setOpen(false)}
+          />
+        </Modal>
+      </div>
     </div>
   );
 }

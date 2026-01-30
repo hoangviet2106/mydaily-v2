@@ -53,7 +53,7 @@ async function computeBudgetAlert(userId, date) {
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
 
-  const budget = await prisma.budgets.findFirst({
+  const budget = await prisma.budget.findFirst({
     where: { user_id: userId, month, year, deleted_at: null },
     select: { id: true, limit_amount: true, month: true, year: true },
   });
@@ -61,7 +61,7 @@ async function computeBudgetAlert(userId, date) {
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 1);
 
-  const agg = await prisma.expenses.aggregate({
+  const agg = await prisma.expense.aggregate({
     _sum: { amount: true },
     where: {
       user_id: userId,
@@ -101,7 +101,7 @@ const getExpenses = async (req, res) => {
   const userId = req.user.sub;
 
   // user plan
-  const user = await prisma.users.findFirst({
+  const user = await prisma.user.findFirst({
     where: { id: userId, deleted_at: null },
     select: { account_type: true },
   });
@@ -155,12 +155,12 @@ const getExpenses = async (req, res) => {
     where.expense_date = { gte: start, lt: end };
   }
 
-  const expenses = await prisma.expenses.findMany({
+  const expense = await prisma.expense.findMany({
     where,
     orderBy: { expense_date: "desc" },
   });
 
-  return res.json(expenses);
+  return res.json(expense);
 };
 
 /** =========================
@@ -181,7 +181,7 @@ const createExpense = async (req, res) => {
   }
 
   // user plan
-  const user = await prisma.users.findFirst({
+  const user = await prisma.user.findFirst({
     where: { id: userId, deleted_at: null },
     select: { account_type: true },
   });
@@ -199,7 +199,7 @@ const createExpense = async (req, res) => {
     const start = dayStart(new Date());
     const resetAt = nextDayStart(new Date());
 
-    const used = await prisma.expenses.count({
+    const used = await prisma.expense.count({
       where: {
         user_id: userId,
         deleted_at: null,
@@ -225,7 +225,7 @@ const createExpense = async (req, res) => {
   const { amount, expense_date, note, category_id } = parsed.data;
 
   // category ownership + not deleted
-  const cat = await prisma.categories.findFirst({
+  const cat = await prisma.category.findFirst({
     where: { id: category_id, user_id: userId, deleted_at: null },
     select: { id: true },
   });
@@ -237,7 +237,7 @@ const createExpense = async (req, res) => {
     });
   }
 
-  const expense = await prisma.expenses.create({
+  const expense = await prisma.expense.create({
     data: {
       id: uuid(),
       amount,
@@ -256,7 +256,7 @@ const createExpense = async (req, res) => {
     const LIMIT = 5;
     const start = dayStart(new Date());
     const resetAt = nextDayStart(new Date());
-    const used = await prisma.expenses.count({
+    const used = await prisma.expense.count({
       where: {
         user_id: userId,
         deleted_at: null,
@@ -292,7 +292,7 @@ const updateExpense = async (req, res) => {
     });
   }
 
-  const existing = await prisma.expenses.findFirst({
+  const existing = await prisma.expense.findFirst({
     where: { id, user_id: userId, deleted_at: null },
   });
   if (!existing) {
@@ -306,7 +306,7 @@ const updateExpense = async (req, res) => {
 
   // category ownership check
   if (data.category_id) {
-    const cat = await prisma.categories.findFirst({
+    const cat = await prisma.category.findFirst({
       where: { id: data.category_id, user_id: userId, deleted_at: null },
       select: { id: true },
     });
@@ -318,7 +318,7 @@ const updateExpense = async (req, res) => {
     }
   }
 
-  const updated = await prisma.expenses.update({
+  const updated = await prisma.expense.update({
     where: { id },
     data: {
       amount: data.amount,
@@ -339,7 +339,7 @@ const deleteExpense = async (req, res) => {
   const userId = req.user.sub;
   const { id } = req.params;
 
-  const existing = await prisma.expenses.findFirst({
+  const existing = await prisma.expense.findFirst({
     where: { id, user_id: userId, deleted_at: null },
     select: { id: true, expense_date: true },
   });
@@ -350,7 +350,7 @@ const deleteExpense = async (req, res) => {
     });
   }
 
-  await prisma.expenses.update({
+  await prisma.expense.update({
     where: { id },
     data: { deleted_at: new Date() },
   });

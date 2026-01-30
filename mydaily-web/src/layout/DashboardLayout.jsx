@@ -1,6 +1,8 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import api from "../api/axios";
 
+/* ================= Icons ================= */
 function Icon({ name }) {
   const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg" };
   const stroke = { stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -70,6 +72,23 @@ function Icon({ name }) {
           <path {...stroke} d="M4 21h16" />
         </svg>
       );
+    case "profile":
+      return (
+        <svg {...common}>
+          <path {...stroke} d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <path {...stroke} d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+        </svg>
+      );
+      case "admin":
+  return (
+    <svg {...common}>
+      <path {...stroke} d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+      <path {...stroke} d="M4 21v-1a7 7 0 0 1 14 0v1" />
+      <path {...stroke} d="M18 8h3" />
+      <path {...stroke} d="M19.5 6.5v3" />
+    </svg>
+  );
+
     default:
       return null;
   }
@@ -90,7 +109,7 @@ function SideLink({ to, icon, label }) {
   );
 }
 
-// ===== helpers =====
+/* ================= helpers ================= */
 function decodeJwtPayload(token) {
   try {
     const parts = String(token).split(".");
@@ -109,7 +128,6 @@ function decodeJwtPayload(token) {
 }
 
 function normalizeAccountType(me, token) {
-  // 1) from /auth/me response
   const raw =
     me?.account_type ??
     me?.accountType ??
@@ -120,7 +138,6 @@ function normalizeAccountType(me, token) {
 
   if (raw) return String(raw).toUpperCase();
 
-  // 2) fallback from JWT payload
   const payload = token ? decodeJwtPayload(token) : null;
   const raw2 =
     payload?.account_type ??
@@ -131,21 +148,16 @@ function normalizeAccountType(me, token) {
     (typeof payload?.is_premium === "boolean" ? (payload.is_premium ? "PREMIUM" : "FREE") : undefined);
 
   if (raw2) return String(raw2).toUpperCase();
-
   return "FREE";
 }
 
-async function fetchMe() {
-  const token = localStorage.getItem("token");
-  if (!token) return { me: null, token: null };
-
-  const res = await fetch("http://localhost:3000/auth/me", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) return { me: null, token };
-  const data = await res.json();
-  return { me: data, token };
+/* IMPORTANT:
+   Dùng api (axios) để tự gắn Authorization header + baseURL "/api"
+   => backend route: /users/me
+*/
+async function fetchMeApi() {
+  const res = await api.get("/users/me"); // expects { user }
+  return res.data;
 }
 
 export default function DashboardLayout() {
@@ -155,49 +167,69 @@ export default function DashboardLayout() {
   const [meLoading, setMeLoading] = useState(true);
   const [token, setToken] = useState(() => localStorage.getItem("token"));
 
+  const refreshMe = async () => {
+    const t = localStorage.getItem("token");
+    if (!t) {
+      setMe(null);
+      setToken(null);
+      setMeLoading(false);
+      return;
+    }
+
+    setMeLoading(true);
+    try {
+      const data = await fetchMeApi(); // { user }
+      setMe(data?.user ?? data ?? null);
+      setToken(t);
+    } catch (e) {
+      // nếu token hỏng/expired, api interceptor có thể xóa token rồi
+      setMe(null);
+      setToken(null);
+    } finally {
+      setMeLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        const out = await fetchMe();
-        if (!alive) return;
-
-        setMe(out.me);
-        setToken(out.token);
-
-        // Debug nhẹ: nếu API không trả plan, bạn sẽ thấy warning
-        const hasPlan =
-          out.me?.account_type != null ||
-          out.me?.accountType != null ||
-          out.me?.plan != null ||
-          out.me?.tier != null ||
-          out.me?.subscription != null ||
-          typeof out.me?.is_premium === "boolean";
-        if (!hasPlan) {
-          console.warn("[MyDaily] /auth/me does not include account type fields. Response:", out.me);
-        }
-      } finally {
-        if (alive) setMeLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
+    refreshMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onLogout = () => {
     localStorage.removeItem("token");
+    setMe(null);
+    setToken(null);
     navigate("/login");
   };
 
   const accountType = useMemo(() => normalizeAccountType(me, token), [me, token]);
-  const displayName =
-    me?.name ||
-    me?.email ||
-    localStorage.getItem("displayName") ||
-    "Bạn";
+
+  // Ưu tiên: name -> phần trước @ của email -> "Bạn"
+  const displayName = useMemo(() => {
+    const name = String(me?.name || "").trim();
+    if (name) return name;
+
+    const email = String(me?.email || "").trim();
+    if (email && email.includes("@")) return email.split("@")[0];
+
+    return "Bạn";
+  }, [me]);
+
+  const location = useLocation();
+
+const pageName = useMemo(() => {
+  const p = location.pathname;
+  if (p.startsWith("/admin")) return "Admin";
+  if (p.startsWith("/tasks")) return "Tasks";
+  if (p.startsWith("/task-reports")) return "Task Reports";
+  if (p.startsWith("/expenses")) return "Expenses";
+  if (p.startsWith("/categories")) return "Categories";
+  if (p.startsWith("/budgets")) return "Budgets";
+  if (p.startsWith("/reports")) return "Finance Reports";
+  if (p.startsWith("/export")) return "Export Data";
+  if (p.startsWith("/profile")) return "Profile";
+  return "Dashboard";
+}, [location.pathname]);
 
 
   return (
@@ -218,33 +250,70 @@ export default function DashboardLayout() {
           <SideLink to="/budgets" icon="budgets" label="Budgets" />
           <SideLink to="/reports" icon="reports" label="Finance Reports" />
           <SideLink to="/export" icon="export" label="Export Data" />
+          {me?.role === "ADMIN" && (
+  <SideLink to="/admin/users" icon="admin" label="Admin Users" />
+)}
 
 
+          {/* NEW: Profile */}
+          <SideLink to="/profile" icon="profile" label="Profile" />
         </nav>
 
-        <div className="sidebar__foot">
-          <div className={accountType === "PREMIUM" ? "pill pill--premium" : "pill"}>
-            🟢{meLoading ? "…" : accountType}
-          </div>
-          <button className="btn" onClick={onLogout}>
-            Logout
-          </button>
-        </div>
+       <div className="sidebar__foot">
+  <div
+    className={`planBadge ${
+      accountType === "PREMIUM" ? "planBadge--premium" : "planBadge--free"
+    }`}
+    title={accountType === "PREMIUM" ? "Premium Plan" : "Free Plan"}
+  >
+    <span className="planBadge__dot" />
+    <span className="planBadge__text">{meLoading ? "Loading" : accountType}</span>
+    {accountType === "PREMIUM" && <span className="planBadge__icon">👑</span>}
+  </div>
+
+  <button className="btn btn--ghost" onClick={onLogout}>
+    Logout
+  </button>
+</div>
+
+
       </aside>
 
       {/* Main */}
       <main className="main">
-        <div className="main__top">
-          <div>
-            <div className="main__title">MyDaily</div>
-            <div className="p-muted">{meLoading ? "Xin chào…" : `Xin chào, ${displayName}`}</div>
-          </div>
-        </div>
+  {/* ✅ TOPBAR */}
+  <div className="topbar">
+    <div className="topbar__left">
+      <div className="crumbs">
+        Dashboard / <b>{pageName}</b>
+      </div>
+    </div>
 
-        <div className="main__content">
-          <Outlet context={{ accountType, me, meLoading }} />
-        </div>
-      </main>
+    <div className="topbar__right">
+      <div className="topbar__hello">Chào, {meLoading ? "…" : displayName}</div>
+      <div className="topbar__avatar">
+       {me?.avatar_url ? (
+  <img
+    src={me.avatar_url}
+    alt={displayName}
+    className="topbar__avatarImg"
+    referrerPolicy="no-referrer"
+  />
+) : (
+  <div className="topbar__avatar">
+    {(displayName || "M").slice(0, 1).toUpperCase()}
+  </div>
+)}
+
+      </div>
+    </div>
+  </div>
+
+  <div className="main__content">
+    <Outlet context={{ accountType, me, meLoading, refreshMe }} />
+  </div>
+</main>
+
     </div>
   );
 }
