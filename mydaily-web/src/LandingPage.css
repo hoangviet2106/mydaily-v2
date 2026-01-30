@@ -1,0 +1,876 @@
+/* ✅ Font imports (đặt ở DÒNG ĐẦU FILE) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+/* =========================
+   LandingPage Scoped Styles
+   ✅ Everything under .lp
+   ========================= */
+
+.lp {
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  --accent-mint: #4ecca3;
+  --accent-coral: #ff6b6b;
+  --accent-orange: #ffa502;
+  --bg-cream: #fdfbf7;
+  --text-dark: #2d3748;
+  --text-muted: #718096;
+  --card-bg: #ffffff;
+  --shadow-soft: 0 10px 40px rgba(102, 126, 234, 0.12);
+  --shadow-hover: 0 20px 60px rgba(102, 126, 234, 0.2);
+
+  /* ✅ Font system */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+  font-family: var(--font-sans);
+  background: var(--bg-cream);
+  color: var(--text-dark);
+  overflow-x: hidden;
+  line-height: 1.6;
+
+  /* ✅ important: allow page height */
+  min-height: 100vh;
+}
+
+.lp * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ✅ Apply display font to headings & logo */
+.lp h1,
+.lp h2,
+.lp h3,
+.lp h4,
+.lp .logo {
+  font-family: var(--font-display);
+}
+
+/* Animated background elements */
+.lp .bg-decoration {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+  animation: lp-float 20s ease-in-out infinite;
+}
+
+.lp .bg-decoration.purple {
+  background: radial-gradient(circle, #667eea 0%, transparent 70%);
+  top: -200px;
+  right: -200px;
+  animation-delay: 0s;
+}
+
+.lp .bg-decoration.pink {
+  background: radial-gradient(circle, #f093fb 0%, transparent 70%);
+  bottom: -100px;
+  left: -100px;
+  animation-delay: 10s;
+}
+
+.lp .bg-decoration.mint {
+  background: radial-gradient(circle, #4ecca3 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  animation-delay: 5s;
+}
+
+@keyframes lp-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+/* Header */
+.lp header {
+  position: relative;
+  padding: 1.5rem 0;
+  z-index: 100;
+}
+
+.lp nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lp .logo {
+  /* ✅ now uses var(--font-display) via heading rule above */
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.lp .nav-links {
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.lp .nav-links a {
+  color: var(--text-dark);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.lp .nav-links a:hover {
+  color: #667eea;
+}
+
+.lp .nav-links a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  transition: width 0.3s ease;
+}
+
+.lp .nav-links a:hover::after {
+  width: 100%;
+}
+
+.lp .btn-nav {
+  padding: 0.65rem 1.5rem;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+  /* ✅ button font */
+  font-family: var(--font-sans);
+}
+
+.lp .btn-nav:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Hero */
+.lp .hero {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 6rem 2rem 4rem;
+  text-align: center;
+  z-index: 10;
+}
+
+.lp .hero-badge {
+  display: inline-block;
+  padding: 0.5rem 1.2rem;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 2rem;
+  animation: lp-fadeInDown 0.8s ease;
+
+  font-family: var(--font-sans);
+}
+
+@keyframes lp-fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lp .hero h1 {
+  /* ✅ display font via heading rule above */
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.03em;
+  animation: lp-fadeInUp 0.8s ease 0.2s both;
+}
+
+@keyframes lp-fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lp .hero h1 .gradient-text {
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.lp .hero p {
+  font-size: 1.35rem;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  animation: lp-fadeInUp 0.8s ease 0.4s both;
+
+  font-family: var(--font-sans);
+}
+
+.lp .hero-cta {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  animation: lp-fadeInUp 0.8s ease 0.6s both;
+}
+
+.lp .btn-primary,
+.lp .btn-secondary {
+  padding: 1rem 2.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+
+  /* ✅ button font */
+  font-family: var(--font-sans);
+}
+
+.lp .btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.lp .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+}
+
+.lp .btn-secondary {
+  background: white;
+  color: var(--text-dark);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.lp .btn-secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.lp .hero-illustration {
+  margin-top: 4rem;
+  position: relative;
+  animation: lp-fadeInUp 0.8s ease 0.8s both;
+}
+
+.lp .hero-visual {
+  background: white;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  position: relative;
+}
+
+.lp .visual-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp .visual-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.lp .visual-card.mint::before {
+  background: var(--accent-mint);
+}
+.lp .visual-card.coral::before {
+  background: var(--accent-coral);
+}
+
+.lp .visual-card h4 {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-dark);
+}
+
+.lp .visual-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.lp .visual-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--accent-mint);
+}
+
+.lp .visual-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  margin: 0.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp .visual-bar-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 10px;
+  animation: lp-fillBar 2s ease-in-out infinite;
+}
+
+@keyframes lp-fillBar {
+  0%,
+  100% {
+    width: 60%;
+  }
+  50% {
+    width: 80%;
+  }
+}
+
+/* Features */
+.lp .features {
+  position: relative;
+  max-width: 1200px;
+  margin: 8rem auto;
+  padding: 0 2rem;
+  z-index: 10;
+}
+
+.lp .section-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.lp .section-label {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: rgba(78, 204, 163, 0.1);
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-mint);
+  margin-bottom: 1rem;
+}
+
+.lp .section-header h2 {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.lp .section-header p {
+  font-size: 1.2rem;
+  
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lp .features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.lp .feature-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp .feature-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.lp .feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-hover);
+}
+
+.lp .feature-card:hover::before {
+  opacity: 0.03;
+}
+
+.lp .feature-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lp .feature-card:nth-child(1) .feature-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.lp .feature-card:nth-child(2) .feature-icon {
+  background: linear-gradient(135deg, #4ecca3 0%, #3ba87f 100%);
+}
+.lp .feature-card:nth-child(3) .feature-icon {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+}
+.lp .feature-card:nth-child(4) .feature-icon {
+  background: linear-gradient(135deg, #ffa502 0%, #ff8800 100%);
+}
+
+.lp .feature-card h3 {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lp .feature-card p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
+}
+
+/* Pricing */
+.lp .pricing {
+  position: relative;
+  max-width: 1200px;
+  margin: 8rem auto;
+  padding: 0 2rem;
+  z-index: 10;
+}
+
+.lp .pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+/* (giữ nguyên pricing-card cũ ở trên, patch sẽ đè ở cuối) */
+.lp .pricing-card {
+  background: white;
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp .pricing-card.premium {
+  background: var(--gradient-primary);
+  color: white;
+  transform: scale(1.05);
+}
+
+.lp .pricing-card.premium * {
+  color: white;
+}
+
+.lp .pricing-card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: var(--shadow-hover);
+}
+
+.lp .pricing-card.premium:hover {
+  transform: translateY(-8px) scale(1.08);
+}
+
+.lp .pricing-badge {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: rgba(78, 204, 163, 0.2);
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.lp .pricing-card.premium .pricing-badge {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lp .pricing-card h3 {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.lp .pricing-price {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin: 1.5rem 0;
+}
+
+.lp .pricing-price span {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.lp .pricing-features {
+  list-style: none;
+  margin: 2rem 0;
+}
+
+.lp .pricing-features li {
+  padding: 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lp .pricing-features li::before {
+  content: "✓";
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-mint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.lp .pricing-card.premium .pricing-features li::before {
+  background: white;
+  color: #667eea;
+}
+
+.lp .pricing-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-family: "Manrope", sans-serif;
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.lp .pricing-card.premium .pricing-btn {
+  background: white;
+  color: #667eea;
+}
+
+.lp .pricing-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Footer */
+.lp footer {
+  position: relative;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-muted);
+  z-index: 10;
+}
+
+.lp footer p {
+  font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .lp .hero h1 {
+    font-size: 3rem;
+  }
+  .lp .hero p {
+    font-size: 1.15rem;
+  }
+  .lp .hero-visual {
+    grid-template-columns: 1fr;
+  }
+  .lp .features-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+  .lp .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  .lp .pricing-card.premium {
+    transform: scale(1);
+  }
+  .lp .nav-links {
+    gap: 1.5rem;
+  }
+  .lp .section-header h2 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .lp .hero h1 {
+    font-size: 2.5rem;
+  }
+  .lp .nav-links a:not(.btn-nav) {
+    display: none;
+  }
+  .lp .hero-cta {
+    flex-direction: column;
+  }
+  .lp .btn-primary,
+  .lp .btn-secondary {
+    width: 100%;
+  }
+}
+
+/* Scroll animations */
+.lp .fade-in-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease;
+}
+
+.lp .fade-in-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== Info-style Hero (like image 2) ===== */
+.lp-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.lp-info-col h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  position: relative;
+  padding-top: 0.75rem;
+}
+
+.lp-info-col h3::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: 4px;
+  background: var(--gradient-primary);
+  border-radius: 4px;
+}
+
+.lp-info-col ul {
+  list-style: none;
+  padding: 0;
+}
+
+.lp-info-col li {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .lp-info-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* Social icons */
+.lp-socials {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.lp-socials a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+  color: var(--text-dark);
+}
+
+.lp-socials a svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.lp-socials a:hover {
+  transform: translateY(-3px);
+  color: #667eea;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* =========================================================
+   ✅ PRICING PATCH: smaller + equal size (DÁN Ở CUỐI FILE)
+   ========================================================= */
+
+.lp .pricing-grid {
+  align-items: stretch; /* 2 card cao bằng nhau */
+}
+
+.lp .pricing-card {
+  padding: 2.25rem;        /* 3rem -> 2.25rem */
+  border-radius: 20px;     /* 24px -> 20px */
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;       /* giúp 2 card đều nhau */
+}
+
+.lp .pricing-card.premium {
+  transform: none;         /* bỏ scale(1.05) */
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 18px 55px rgba(102, 126, 234, 0.35); /* nổi bật nhưng không to */
+}
+
+.lp .pricing-card:hover {
+  transform: translateY(-6px); /* bỏ scale ở hover */
+}
+.lp .pricing-card.premium:hover {
+  transform: translateY(-6px);
+}
+
+.lp .pricing-card h3 {
+  font-size: 1.75rem;      /* 2rem -> 1.75rem */
+}
+
+.lp .pricing-price {
+  font-size: 3rem;         /* 3.5rem -> 3rem */
+  margin: 1.25rem 0;
+}
+.lp .pricing-price span {
+  font-size: 1.2rem;       /* 1.5rem -> 1.2rem */
+}
+
+.lp .pricing-features {
+  margin: 1.5rem 0;
+}
+.lp .pricing-features li {
+  padding: 0.6rem 0;       /* 0.75rem -> 0.6rem */
+  font-size: 0.98rem;
+}
+.lp .pricing-features li::before {
+  width: 22px;
+  height: 22px;
+  font-size: 0.85rem;
+}
+
+.lp .pricing-btn {
+  margin-top: auto;        /* nút nằm sát đáy => đều nhau */
+  padding: 0.95rem;
+  border-radius: 12px;
+}
+/* ✅ Option: icon nằm dưới cột 3 */
+.lp .lp-socials {
+  max-width: 1000px;
+  margin: 1.25rem auto 0;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: calc((1000px - 1000px) / 2); /* giữ nguyên */
+}
+
+/* desktop: đẩy sang cột 3 */
+@media (min-width: 901px) {
+  .lp .lp-socials {
+    justify-content: flex-start;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: calc((1000px / 3) * 2); /* bắt đầu từ cột 3 */
+  }
+}
+
+/* mobile: về bình thường */
+@media (max-width: 900px) {
+  .lp .lp-socials {
+    padding-left: 0;
+  }
+}

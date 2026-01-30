@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import LandingPage from "../pages/LandingPage";
 import Login from "../auth/Login";
 import Register from "../auth/Register";
 import RequireAuth from "../auth/RequireAuth";
@@ -28,7 +29,8 @@ export default function AppRouter() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/"
+        element={hasToken ? <Navigate to="/dashboard" replace /> : <LandingPage />}/>
       <Route path="/oauth/callback" element={<OAuthCallback />} />
 
       <Route
