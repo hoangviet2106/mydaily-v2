@@ -78,6 +78,109 @@ function getAccountType(req) {
   return "FREE";
 }
 
+/** =========================
+ * Streak helpers (Asia/Bangkok UTC+7)
+ * ========================= */
+const TZ_OFFSET_MIN = 7 * 60;
+
+function bangkokDateOnly(date = new Date()) {
+  // shift +7h rồi lấy Y-M-D theo UTC => ổn định dù server timezone gì
+  const shifted = new Date(date.getTime() + TZ_OFFSET_MIN * 60 * 1000);
+  const y = shifted.getUTCFullYear();
+  const m = shifted.getUTCMonth();
+  const d = shifted.getUTCDate();
+  return new Date(Date.UTC(y, m, d)); // 00:00 UTC
+}
+
+function toBangkokYMD(date = new Date()) {
+  const shifted = new Date(date.getTime() + TZ_OFFSET_MIN * 60 * 1000);
+  const y = shifted.getUTCFullYear();
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(shifted.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function sameDateOnly(a, b) {
+  if (!a || !b) return false;
+  return (
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
+  );
+}
+
+function yesterdayDateOnly(dateOnlyUTC) {
+  const d = new Date(dateOnlyUTC);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d;
+}
+
+async function getStreakSnapshot(tx, userId, todayDateOnly) {
+  const s = await tx.userStreak.findUnique({ where: { user_id: userId } });
+  const todayDone = s?.last_streak_date ? sameDateOnly(s.last_streak_date, todayDateOnly) : false;
+
+  return {
+    current_streak: s?.current_streak ?? 0,
+    longest_streak: s?.longest_streak ?? 0,
+    last_streak_date: s?.last_streak_date ?? null,
+    today_done: todayDone,
+  };
+}
+
+async function updateStreakOnFirstCompletionToday(tx, userId, now) {
+  const todayDateOnly = bangkokDateOnly(now);
+  const yestDateOnly = yesterdayDateOnly(todayDateOnly);
+
+  let streak = await tx.userStreak.findUnique({ where: { user_id: userId } });
+
+  if (!streak) {
+    streak = await tx.userStreak.create({
+      data: {
+        user_id: userId,
+        current_streak: 1,
+        longest_streak: 1,
+        last_streak_date: todayDateOnly,
+      },
+    });
+  } else {
+    // đã chốt hôm nay rồi => không cập nhật
+    if (streak.last_streak_date && sameDateOnly(streak.last_streak_date, todayDateOnly)) {
+      return {
+        current_streak: streak.current_streak,
+        longest_streak: streak.longest_streak,
+        last_streak_date: streak.last_streak_date,
+        today_done: true,
+      };
+    }
+
+    let nextCurrent = 1;
+    if (streak.last_streak_date && sameDateOnly(streak.last_streak_date, yestDateOnly)) {
+      nextCurrent = (streak.current_streak || 0) + 1;
+    }
+
+    const nextLongest = Math.max(streak.longest_streak || 0, nextCurrent);
+
+    streak = await tx.userStreak.update({
+      where: { user_id: userId },
+      data: {
+        current_streak: nextCurrent,
+        longest_streak: nextLongest,
+        last_streak_date: todayDateOnly,
+      },
+    });
+  }
+
+  return {
+    current_streak: streak.current_streak,
+    longest_streak: streak.longest_streak,
+    last_streak_date: streak.last_streak_date,
+    today_done: true,
+  };
+}
+
+/** =========================
+ * Schemas
+ * ========================= */
 const createTaskSchema = z.object({
   title: z.string().trim().min(2).max(255),
   description: z.string().max(5000).optional().nullable(),
@@ -209,6 +312,7 @@ const getTasks = async (req, res) => {
         is_completed: true,
         due_date: true,
         created_at: true,
+        completed_at: true, // ✅ NEW (nếu muốn show)
       },
     }),
   ]);
@@ -273,6 +377,7 @@ const createTask = async (req, res) => {
       description: data.description ?? null,
       due_date: data.due_date ?? null,
       is_completed: false,
+      completed_at: null, // ✅ NEW
       user_id: userId,
     },
     select: {
@@ -282,6 +387,7 @@ const createTask = async (req, res) => {
       is_completed: true,
       due_date: true,
       created_at: true,
+      completed_at: true, // ✅ NEW
     },
   });
 
@@ -290,6 +396,8 @@ const createTask = async (req, res) => {
 
 /** =========================
  * PATCH /tasks/:id
+ * - Nếu set is_completed:true => complete + update streak
+ * - Không cho set is_completed:false (tránh phá streak)
  * ========================= */
 const updateTask = async (req, res) => {
   const userId = req.user.sub;
@@ -308,7 +416,7 @@ const updateTask = async (req, res) => {
 
   const existing = await prisma.task.findFirst({
     where: { id, user_id: userId, deleted_at: null },
-    select: { id: true },
+    select: { id: true, is_completed: true },
   });
 
   if (!existing) {
@@ -318,13 +426,76 @@ const updateTask = async (req, res) => {
     });
   }
 
+  // ❌ Không cho uncomplete để tránh phá streak logic
+  if (patch.is_completed === false) {
+    return res.status(400).json({
+      error: "NOT_ALLOWED",
+      message: "Không hỗ trợ bỏ hoàn thành (uncomplete) để đảm bảo streak chính xác.",
+    });
+  }
+
+  // ✅ Nếu request muốn complete task
+  if (patch.is_completed === true) {
+    const now = new Date();
+    const todayDateOnly = bangkokDateOnly(now);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Nếu đã completed trước đó => không tăng streak nữa
+      if (existing.is_completed) {
+        const task = await tx.task.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            is_completed: true,
+            due_date: true,
+            created_at: true,
+            completed_at: true,
+          },
+        });
+
+        const streak = await getStreakSnapshot(tx, userId, todayDateOnly);
+        return { task, streak: { ...streak, today: toBangkokYMD(now) } };
+      }
+
+      // 1) Update task to completed
+      const task = await tx.task.update({
+        where: { id },
+        data: {
+          is_completed: true,
+          completed_at: now,
+          ...(patch.title !== undefined ? { title: patch.title } : {}),
+          ...(patch.description !== undefined ? { description: patch.description } : {}),
+          ...(patch.due_date !== undefined ? { due_date: patch.due_date } : {}),
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          is_completed: true,
+          due_date: true,
+          created_at: true,
+          completed_at: true,
+        },
+      });
+
+      // 2) Update streak (max 1/day)
+      const streak = await updateStreakOnFirstCompletionToday(tx, userId, now);
+      return { task, streak: { ...streak, today: toBangkokYMD(now) } };
+    });
+
+    return res.json(result);
+  }
+
+  // ✅ Update bình thường (không liên quan complete)
   const updated = await prisma.task.update({
     where: { id },
     data: {
       ...(patch.title !== undefined ? { title: patch.title } : {}),
       ...(patch.description !== undefined ? { description: patch.description } : {}),
       ...(patch.due_date !== undefined ? { due_date: patch.due_date } : {}),
-      ...(patch.is_completed !== undefined ? { is_completed: patch.is_completed } : {}),
+      // is_completed không xử lý ở đây (đã xử lý phía trên)
     },
     select: {
       id: true,
@@ -333,6 +504,7 @@ const updateTask = async (req, res) => {
       is_completed: true,
       due_date: true,
       created_at: true,
+      completed_at: true, // ✅ NEW
     },
   });
 
@@ -365,10 +537,76 @@ const deleteTask = async (req, res) => {
 
   return res.json({ message: "Task deleted" });
 };
+/** =========================
+ * PATCH /tasks/:id/complete
+ * ========================= */
+const completeTask = async (req, res) => {
+  const userId = req.user.sub;
+  const { id } = req.params;
+
+  const now = new Date();
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.task.findFirst({
+        where: { id, user_id: userId, deleted_at: null },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          is_completed: true,
+          due_date: true,
+          created_at: true,
+          completed_at: true,
+        },
+      });
+
+      if (!existing) {
+        return { error: { status: 404, body: { error: "NOT_FOUND", message: "Task not found" } } };
+      }
+
+      // Nếu đã complete rồi => không tăng streak
+      if (existing.is_completed) {
+        const todayDateOnly = bangkokDateOnly(now);
+        const streak = await getStreakSnapshot(tx, userId, todayDateOnly);
+        return { task: existing, streak: { ...streak, today: toBangkokYMD(now) } };
+      }
+
+      // 1) update task -> completed
+      const task = await tx.task.update({
+        where: { id },
+        data: {
+          is_completed: true,
+          completed_at: now,
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          is_completed: true,
+          due_date: true,
+          created_at: true,
+          completed_at: true,
+        },
+      });
+
+      // 2) update streak (max 1/day)
+      const streak = await updateStreakOnFirstCompletionToday(tx, userId, now);
+
+      return { task, streak: { ...streak, today: toBangkokYMD(now) } };
+    });
+
+    if (result?.error) return res.status(result.error.status).json(result.error.body);
+    return res.json(result);
+  } catch (e) {
+    return res.status(500).json({ error: "SERVER_ERROR", message: "Failed to complete task" });
+  }
+};
 
 module.exports = {
   getTasks,
   createTask,
   updateTask,
   deleteTask,
+  completeTask,
 };

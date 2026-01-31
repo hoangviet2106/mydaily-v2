@@ -2,10 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import TaskDrawer from "../components/TaskDrawer";
 import TaskFilters from "../components/TaskFilters";
 import TaskList from "../components/TaskList";
-import { createTask, deleteTask, fetchTasks, updateTask } from "../api/tasks";
+import api from "../api/axios"; // ✅ NEW: dùng để load streak từ /dashboard/basic
+import {
+  createTask,
+  deleteTask,
+  fetchTasks,
+  updateTask,
+  completeTask,
+} from "../api/tasks";
 
 function normalizeDateInput(v) {
-  // HTML date input returns "YYYY-MM-DD" or ""
   return v ? v : null;
 }
 
@@ -15,6 +21,8 @@ export default function TasksPage() {
 
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
+
+  const [streak, setStreak] = useState(null);
 
   const [filters, setFilters] = useState({
     status: "all",
@@ -27,7 +35,7 @@ export default function TasksPage() {
   });
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState("create"); // create | edit
+  const [drawerMode, setDrawerMode] = useState("create");
   const [selected, setSelected] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,10 +70,27 @@ export default function TasksPage() {
     }
   };
 
+  // ✅ NEW: load streak from backend so refresh won't reset to 0
+  const loadStreak = async () => {
+    try {
+      const res = await api.get("/dashboard/basic");
+      setStreak(res.data?.streak ?? null);
+    } catch {
+      // ignore (không block UI tasks)
+    }
+  };
+
+  // load tasks when filters change
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
+
+  // ✅ load streak once on page open (and you can also refresh it after actions if needed)
+  useEffect(() => {
+    loadStreak();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openCreate = () => {
     setDrawerMode("create");
@@ -94,11 +119,11 @@ export default function TasksPage() {
           title: values.title,
           description: values.description || null,
           due_date: normalizeDateInput(values.due_date),
-          // is_completed có thể update bằng toggle nhanh ở list (bên dưới)
         });
       }
       setDrawerOpen(false);
       await load();
+      await loadStreak(); // ✅ optional: sync streak after create/edit
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -111,16 +136,27 @@ export default function TasksPage() {
     }
   };
 
+  /**
+   * 🔥 COMPLETE TASK + UPDATE STREAK
+   */
   const onToggleComplete = async (task) => {
+    if (task.is_completed) return;
+
     // optimistic UI
-    const next = items.map((x) => (x.id === task.id ? { ...x, is_completed: !x.is_completed } : x));
-    setItems(next);
+    setItems((prev) =>
+      prev.map((x) => (x.id === task.id ? { ...x, is_completed: true } : x))
+    );
 
     try {
-      await updateTask(task.id, { is_completed: !task.is_completed });
-      await load();
+      const result = await completeTask(task.id);
+      // result = { task, streak }
+
+      setItems((prev) =>
+        prev.map((x) => (x.id === task.id ? result.task : x))
+      );
+
+      setStreak(result.streak); // ✅ realtime update
     } catch (err) {
-      // rollback
       setItems(items);
       const msg =
         err?.response?.data?.message ||
@@ -139,6 +175,7 @@ export default function TasksPage() {
     try {
       await deleteTask(task.id);
       await load();
+      await loadStreak(); // ✅ sync streak if needed
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -148,8 +185,6 @@ export default function TasksPage() {
       setErr(msg);
     }
   };
-
-  const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
 
   return (
     <div className="pageWidth">
@@ -177,14 +212,31 @@ export default function TasksPage() {
 
         <div className="mini">
           <div className="mini__label">Hoàn thành</div>
-          <div className="mini__value mono">{items.filter((x) => x.is_completed).length}</div>
+          <div className="mini__value mono">
+            {items.filter((x) => x.is_completed).length}
+          </div>
           <div className="mini__hint">Danh sách hiện có</div>
         </div>
 
         <div className="mini">
           <div className="mini__label">Mở</div>
-          <div className="mini__value mono">{items.filter((x) => !x.is_completed).length}</div>
+          <div className="mini__value mono">
+            {items.filter((x) => !x.is_completed).length}
+          </div>
           <div className="mini__hint">Danh sách hiện có</div>
+        </div>
+
+        {/* 🔥 Streak card */}
+        <div className="mini">
+          <div className="mini__label">Streak</div>
+          <div className="mini__value mono">🔥 {streak?.current_streak ?? 0}</div>
+          <div className="mini__hint">
+            {streak
+              ? streak.today_done
+                ? "✅ Hôm nay đã giữ streak"
+                : "⚠️ Chưa hoàn thành hôm nay"
+              : "Đang tải streak..."}
+          </div>
         </div>
       </div>
 
@@ -207,18 +259,8 @@ export default function TasksPage() {
             }
           />
         </div>
-
-        <div className="toolbar__right">
-          <span className="tag">
-            Trang <span className="mono"> {filters.page} </span>
-          </span>
-          <span className="tag">
-            Kích cỡ <span className="mono"> {filters.pageSize} </span>
-          </span>
-        </div>
       </div>
 
-      {/* Error */}
       {err ? <div className="alert">{err}</div> : null}
 
       {/* Table */}
@@ -229,52 +271,6 @@ export default function TasksPage() {
         onDelete={onDelete}
         onToggleComplete={onToggleComplete}
       />
-
-      {/* Pager */}
-      <div className="toolbar" style={{ marginTop: 12 }}>
-        <div className="toolbar__left">
-          <button
-            className="btn btn-sm"
-            type="button"
-            onClick={() => setFilters((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
-            disabled={filters.page <= 1}
-          >
-            Trước
-          </button>
-
-          <div className="hint">
-            Trang <b className="mono">{filters.page}</b> /{" "}
-            <b className="mono">{Math.max(1, Math.ceil(total / filters.pageSize))}</b> · Total{" "}
-            <b className="mono">{total}</b>
-          </div>
-
-          <button
-            className="btn btn-sm"
-            type="button"
-            onClick={() =>
-              setFilters((p) => ({
-                ...p,
-                page: Math.min(Math.max(1, Math.ceil(total / p.pageSize)), p.page + 1),
-              }))
-            }
-            disabled={filters.page >= Math.max(1, Math.ceil(total / filters.pageSize))}
-          >
-            Sau
-          </button>
-        </div>
-
-        <div className="toolbar__right">
-          <select
-            className="input input--sm"
-            value={filters.pageSize}
-            onChange={(e) => setFilters((p) => ({ ...p, pageSize: Number(e.target.value), page: 1 }))}
-          >
-            <option value={10}>10 / trang</option>
-            <option value={20}>20 / trang</option>
-            <option value={50}>50 / trang</option>
-          </select>
-        </div>
-      </div>
 
       {/* Drawer */}
       <TaskDrawer

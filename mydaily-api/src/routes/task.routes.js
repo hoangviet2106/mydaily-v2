@@ -5,12 +5,14 @@ const {
   createTask,
   updateTask,
   deleteTask,
+  completeTask, // ✅ NEW
 } = require("../controllers/task.controller");
 
 router.use(auth);
 
 router.get("/", getTasks);
 router.post("/", createTask);
+router.patch("/:id/complete", completeTask); // ✅ NEW
 router.patch("/:id", updateTask);
 router.delete("/:id", deleteTask);
 

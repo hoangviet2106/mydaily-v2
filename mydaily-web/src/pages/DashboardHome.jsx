@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import { useOutletContext, useNavigate } from "react-router-dom";
 
-
 export default function DashboardHome() {
   const { me, meLoading } = useOutletContext() || {};
   const navigate = useNavigate();
   const [basic, setBasic] = useState(null);
+  const [streak, setStreak] = useState(null); // ✅ NEW
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -16,6 +16,7 @@ export default function DashboardHome() {
         const res = await api.get("/dashboard/basic");
         if (!alive) return;
         setBasic(res.data);
+        setStreak(res.data?.streak ?? null); // ✅ NEW: nếu backend trả về streak
       } catch (err) {
         const msg =
           err?.response?.data?.message ||
@@ -92,6 +93,9 @@ export default function DashboardHome() {
         {/* <button className="btn btn-primary">+ Tạo task</button> */}
       </div>
 
+      {/* 🔥 Streak */}
+      <StreakWidget streak={streak} />
+
       {/* HERO: Today Focus */}
       <div className="dashHero card pad-lg">
         <div className="dashHero__left">
@@ -108,12 +112,8 @@ export default function DashboardHome() {
           </div>
         </div>
 
-
         <div className="dashHero__right">
-          <button
-            className="btn btn-primary btn-block dashHero__cta"
-            onClick={() => navigate("/tasks")}
-          >
+          <button className="btn btn-primary btn-block dashHero__cta" onClick={() => navigate("/tasks")}>
             <span>Tiếp tục task tiếp theo</span>
             <span className="dashHero__ctaIcon">→</span>
           </button>
@@ -141,12 +141,12 @@ export default function DashboardHome() {
             <MiniStat
               title="Chi tiêu tháng này"
               value={formatVND(spendingMonth)}
-              hint="Total expenses (current month)"
+              hint="Tổng chi tiêu (current month)"
             />
             <MiniStat
               title="Loại chi phí"
               value={basic.financeThisMonth?.categoriesCount ?? 0}
-              hint="Categories used"
+              hint="Danh mục sử dụng"
             />
             <MiniStat
               title="Insight"
@@ -155,6 +155,29 @@ export default function DashboardHome() {
             />
           </div>
         </section>
+      </div>
+    </div>
+  );
+}
+
+function StreakWidget({ streak }) {
+  if (!streak) return null;
+
+  return (
+    <div className="card pad-md" style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 18, fontWeight: 800 }}>
+          🔥 <span style={{ fontSize: 28 }}>{streak.current_streak}</span> ngày liên tiếp
+        </div>
+        {/* <div style={{ opacity: 0.7 }}>Kỷ lục: {streak.longest_streak} ngày</div> */}
+      </div>
+
+      <div style={{ marginTop: 6 }}>
+        {!streak.today_done ? (
+          <span style={{ color: "#b45309" }}>⚠️ Hoàn thành 1 công việc hôm nay để giữ streak</span>
+        ) : (
+          <span style={{ color: "#15803d" }}>✅ Hôm nay đã giữ streak</span>
+        )}
       </div>
     </div>
   );

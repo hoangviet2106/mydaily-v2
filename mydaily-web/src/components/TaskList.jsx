@@ -41,26 +41,51 @@ export default function TaskList({ loading, items, onEdit, onDelete, onToggleCom
                 const overdue = isOverdue(t);
                 const status = t.is_completed ? "Completed" : overdue ? "Overdue" : "Open";
 
+                const checkboxDisabled = !!t.is_completed; // ✅ không cho uncomplete
+
                 return (
                   <tr key={t.id}>
                     <td>
-                      <input type="checkbox" checked={!!t.is_completed} onChange={() => onToggleComplete?.(t)} />
+                      <input
+                        type="checkbox"
+                        checked={!!t.is_completed}
+                        disabled={checkboxDisabled}
+                        title={checkboxDisabled ? "Task đã hoàn thành" : "Đánh dấu hoàn thành"}
+                        onChange={() => {
+                          if (checkboxDisabled) return;
+                          onToggleComplete?.(t);
+                        }}
+                      />
                     </td>
 
                     <td>
                       <div style={{ fontWeight: 900, opacity: t.is_completed ? 0.55 : 1 }}>
                         {t.title}
                       </div>
-                      {t.description ? <div className="td-muted" style={{ marginTop: 4 }}>{t.description}</div> : null}
+
+                      {t.description ? (
+                        <div className="td-muted" style={{ marginTop: 4 }}>
+                          {t.description}
+                        </div>
+                      ) : null}
                     </td>
 
                     <td className="td-muted">{formatDate(t.due_date)}</td>
 
                     <td>
-                      <span className="tag">
-                        {status}
-                      </span>
-                      {overdue ? <span className="tag" style={{ marginLeft: 8, color: "#8B1F2A", background: "rgba(227,93,106,0.10)" }}>Late</span> : null}
+                      <span className="tag">{status}</span>
+                      {overdue ? (
+                        <span
+                          className="tag"
+                          style={{
+                            marginLeft: 8,
+                            color: "#8B1F2A",
+                            background: "rgba(227,93,106,0.10)",
+                          }}
+                        >
+                          Late
+                        </span>
+                      ) : null}
                     </td>
 
                     <td style={{ whiteSpace: "nowrap" }}>

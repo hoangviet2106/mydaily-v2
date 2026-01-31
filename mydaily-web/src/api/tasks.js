@@ -31,3 +31,12 @@ export async function deleteTask(id) {
   const res = await api.delete(`/tasks/${id}`);
   return res.data;
 }
+
+/**
+ * PATCH /tasks/:id/complete
+ * returns: { task, streak }
+ */
+export async function completeTask(id) {
+  const res = await api.patch(`/tasks/${id}/complete`);
+  return res.data;
+}
