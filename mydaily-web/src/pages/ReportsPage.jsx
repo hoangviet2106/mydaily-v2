@@ -179,8 +179,8 @@ function ComparisonGauge({ comparison }) {
     band === "danger"
       ? "rgba(227, 93, 106, 0.85)"
       : band === "warn"
-      ? "rgba(201, 195, 141, 0.95)"
-      : "rgba(111, 174, 164, 0.95)";
+        ? "rgba(201, 195, 141, 0.95)"
+        : "rgba(111, 174, 164, 0.95)";
 
   return (
     <div className="card" style={{ marginTop: 14, padding: 14 }}>
@@ -410,9 +410,9 @@ export default function ReportsPage() {
         {/* Header */}
         <div className="dashHeader">
           <div>
-            <div className="pageTitle">Finance Reports</div>
+            <div className="pageTitle">Báo cáo tài chính</div>
             <div className="dashDate">
-              Tổng hợp báo cáo: breakdown, Ngân sách vs chi tiêu, xu hướng, Định kỳ và top chi phí.
+              Tổng hợp báo cáo: Thông số, Ngân sách vs chi tiêu, xu hướng, Định kỳ và top chi phí.
             </div>
           </div>
 
@@ -735,7 +735,7 @@ export default function ReportsPage() {
                               {formatMoney(r.total)} VNĐ
                             </td>
                             <td className="td-muted" style={{ textAlign: "center" }}>
-                              — 
+                              —
                             </td>
                           </tr>
                         ))}

@@ -32,7 +32,7 @@ export default function TaskReportSummary() {
     <div style={{ marginTop: 14 }}>
       <div className="cards3">
         <div className="mini">
-          <div className="mini__label">Tổng task</div>
+          <div className="mini__label">Tổng công việc</div>
           <div className="mini__value mono">{data.totalCreated}</div>
           <div className="mini__hint">Tạo trong 30 ngày</div>
         </div>
@@ -40,7 +40,7 @@ export default function TaskReportSummary() {
         <div className="mini">
           <div className="mini__label">Hoàn thành</div>
           <div className="mini__value mono">{data.completed}</div>
-          <div className="mini__hint">{data.completionRate}% completion</div>
+          <div className="mini__hint">{data.completionRate}% hoàn thành</div>
         </div>
 
         <div className="mini">
@@ -52,11 +52,11 @@ export default function TaskReportSummary() {
         <div className="mini">
           <div className="mini__label">Trễ hạn</div>
           <div className="mini__value mono">{data.overdue}</div>
-          <div className="mini__hint">Quá due date</div>
+          <div className="mini__hint">Quá hạn</div>
         </div>
 
         <div className="mini">
-          <div className="mini__label">Due hôm nay</div>
+          <div className="mini__label">Hạn hôm nay</div>
           <div className="mini__value mono">{data.dueToday}</div>
           <div className="mini__hint">Cần xử lý gấp</div>
         </div>

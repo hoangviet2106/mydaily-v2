@@ -35,10 +35,10 @@ export default function TaskDrawer({ open, mode, initialValue, submitting, onSub
   const footer = (
     <>
       <button className="btn" type="button" onClick={onClose} disabled={submitting}>
-        Cancel
+        Hủy
       </button>
       <button className="btn btn-primary" type="submit" form="taskForm" disabled={submitting}>
-        {submitting ? "Saving..." : "Save"}
+        {submitting ? "Saving..." : "lưu"}
       </button>
     </>
   );
@@ -53,12 +53,12 @@ export default function TaskDrawer({ open, mode, initialValue, submitting, onSub
         ) : null}
 
         <div className="field">
-          <label className="label">Title</label>
+          <label className="label">Tiêu đề</label>
           <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
         <div className="field">
-          <label className="label">Description</label>
+          <label className="label">Mô tả</label>
           <textarea
             className="input"
             rows={4}
@@ -68,7 +68,7 @@ export default function TaskDrawer({ open, mode, initialValue, submitting, onSub
         </div>
 
         <div className="field">
-          <label className="label">Due date</label>
+          <label className="label">Hạn ngày</label>
           <input className="input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </div>
       </form>

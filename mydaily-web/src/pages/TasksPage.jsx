@@ -154,37 +154,37 @@ export default function TasksPage() {
   return (
     <div className="pageWidth">
       {/* Header */}
-    <div className="dashHeader">
-  <div>
-    <div className="pageTitle">Tasks</div>
-    <div className="dashDate">Manage your work and deadlines</div>
-  </div>
+      <div className="dashHeader">
+        <div>
+          <div className="pageTitle">Công việc</div>
+          <div className="dashDate">Quản lý công việc của bạn</div>
+        </div>
 
-  <div className="pageActions">
-    <button className="btn btn-primary" onClick={openCreate} type="button">
-      + New task
-    </button>
-  </div>
-</div>
+        <div className="pageActions">
+          <button className="btn btn-primary" onClick={openCreate} type="button">
+            + Tạo mới nhiệm vụ
+          </button>
+        </div>
+      </div>
 
       {/* Summary cards */}
       <div className="cards3">
         <div className="mini">
-          <div className="mini__label">Total</div>
+          <div className="mini__label">Tổng</div>
           <div className="mini__value mono">{total}</div>
-          <div className="mini__hint">All tasks (after filters)</div>
+          <div className="mini__hint">Tất cả (after filters)</div>
         </div>
 
         <div className="mini">
-          <div className="mini__label">Completed</div>
+          <div className="mini__label">Hoàn thành</div>
           <div className="mini__value mono">{items.filter((x) => x.is_completed).length}</div>
-          <div className="mini__hint">In current list</div>
+          <div className="mini__hint">Danh sách hiện có</div>
         </div>
 
         <div className="mini">
-          <div className="mini__label">Open</div>
+          <div className="mini__label">Mở</div>
           <div className="mini__value mono">{items.filter((x) => !x.is_completed).length}</div>
-          <div className="mini__hint">In current list</div>
+          <div className="mini__hint">Danh sách hiện có</div>
         </div>
       </div>
 
@@ -210,10 +210,10 @@ export default function TasksPage() {
 
         <div className="toolbar__right">
           <span className="tag">
-            Page <span className="mono">{filters.page}</span>
+            Trang <span className="mono"> {filters.page} </span>
           </span>
           <span className="tag">
-            Size <span className="mono">{filters.pageSize}</span>
+            Kích cỡ <span className="mono"> {filters.pageSize} </span>
           </span>
         </div>
       </div>
@@ -239,11 +239,11 @@ export default function TasksPage() {
             onClick={() => setFilters((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
             disabled={filters.page <= 1}
           >
-            Prev
+            Trước
           </button>
 
           <div className="hint">
-            Page <b className="mono">{filters.page}</b> /{" "}
+            Trang <b className="mono">{filters.page}</b> /{" "}
             <b className="mono">{Math.max(1, Math.ceil(total / filters.pageSize))}</b> · Total{" "}
             <b className="mono">{total}</b>
           </div>
@@ -259,7 +259,7 @@ export default function TasksPage() {
             }
             disabled={filters.page >= Math.max(1, Math.ceil(total / filters.pageSize))}
           >
-            Next
+            Sau
           </button>
         </div>
 
@@ -269,9 +269,9 @@ export default function TasksPage() {
             value={filters.pageSize}
             onChange={(e) => setFilters((p) => ({ ...p, pageSize: Number(e.target.value), page: 1 }))}
           >
-            <option value={10}>10 / page</option>
-            <option value={20}>20 / page</option>
-            <option value={50}>50 / page</option>
+            <option value={10}>10 / trang</option>
+            <option value={20}>20 / trang</option>
+            <option value={50}>50 / trang</option>
           </select>
         </div>
       </div>

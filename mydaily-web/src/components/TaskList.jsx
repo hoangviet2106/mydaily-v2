@@ -22,10 +22,10 @@ export default function TaskList({ loading, items, onEdit, onDelete, onToggleCom
           <thead>
             <tr>
               <th style={{ width: 56 }}></th>
-              <th>Title</th>
-              <th style={{ width: 140 }}>Due</th>
-              <th style={{ width: 140 }}>Status</th>
-              <th style={{ width: 190 }}></th>
+              <th>Tiêu đề</th>
+              <th style={{ width: 140 }}>Ngày</th>
+              <th style={{ width: 140 }}>Trạng thái</th>
+              <th style={{ width: 190 }}>Hành động</th>
             </tr>
           </thead>
 
@@ -65,10 +65,10 @@ export default function TaskList({ loading, items, onEdit, onDelete, onToggleCom
 
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button className="btn btn-sm" type="button" onClick={() => onEdit?.(t)}>
-                        Edit
+                        Sửa
                       </button>{" "}
                       <button className="btn btn-sm btn-danger" type="button" onClick={() => onDelete?.(t)}>
-                        Delete
+                        Xóa
                       </button>
                     </td>
                   </tr>

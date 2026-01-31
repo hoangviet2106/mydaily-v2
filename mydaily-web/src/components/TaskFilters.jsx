@@ -15,15 +15,15 @@ export default function TaskFilters({ value, onChange, onReset }) {
           value={local.status}
           onChange={(e) => setLocal((p) => ({ ...p, status: e.target.value }))}
         >
-          <option value="all">All</option>
-          <option value="open">Open</option>
-          <option value="completed">Completed</option>
-          <option value="overdue">Overdue</option>
+          <option value="all">Tất cả</option>
+          <option value="open">Đang mở</option>
+          <option value="completed">Hoàn Thành</option>
+          <option value="overdue">Quá hạn</option>
         </select>
 
         <input
           className="input input--sm"
-          placeholder="Search title / description..."
+          placeholder="Tìm kiếm tiêu đề / mô tả..."
           value={local.q}
           onChange={(e) => setLocal((p) => ({ ...p, q: e.target.value }))}
           style={{ width: 260 }}
@@ -34,10 +34,10 @@ export default function TaskFilters({ value, onChange, onReset }) {
           value={local.sort}
           onChange={(e) => setLocal((p) => ({ ...p, sort: e.target.value }))}
         >
-          <option value="created_desc">Created (newest)</option>
-          <option value="created_asc">Created (oldest)</option>
-          <option value="due_asc">Due (earliest)</option>
-          <option value="due_desc">Due (latest)</option>
+          <option value="created_desc">Tạo (mới nhất)</option>
+          <option value="created_asc">Tạo (cũ)</option>
+          <option value="due_asc">Hạn (sớm)</option>
+          <option value="due_desc">Hạn (muộn)</option>
         </select>
       </div>
 
@@ -47,18 +47,18 @@ export default function TaskFilters({ value, onChange, onReset }) {
           type="date"
           value={local.dueFrom}
           onChange={(e) => setLocal((p) => ({ ...p, dueFrom: e.target.value }))}
-          title="Due from"
+          title="Hạn từ"
         />
         <input
           className="input input--sm"
           type="date"
           value={local.dueTo}
           onChange={(e) => setLocal((p) => ({ ...p, dueTo: e.target.value }))}
-          title="Due to"
+          title="Hạn đến"
         />
 
         <button className="btn btn-sm btn-primary" type="button" onClick={apply}>
-          Apply
+          Tìm 
         </button>
         <button className="btn btn-sm btn-ghost" type="button" onClick={onReset}>
           Reset

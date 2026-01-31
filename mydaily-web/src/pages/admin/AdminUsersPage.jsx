@@ -72,17 +72,17 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ padding: 16 }}>
-      <h2 style={{ marginBottom: 12 }}>Admin • Users</h2>
+      <h2 style={{ marginBottom: 12 }}>Admin • người dùng</h2>
 
       <form onSubmit={onSearchSubmit} style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by email or name..."
+          placeholder="Tìm kiếm theo gmail hoặc tên..."
           style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid #ddd" }}
         />
         <button type="submit" disabled={loading} style={{ padding: "10px 12px", borderRadius: 8 }}>
-          Search
+          Tìm kiếm
         </button>
       </form>
 
@@ -101,11 +101,11 @@ export default function AdminUsersPage() {
               <thead>
                 <tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
                   <th style={{ padding: 10 }}>Email</th>
-                  <th style={{ padding: 10 }}>Name</th>
-                  <th style={{ padding: 10 }}>Role</th>
-                  <th style={{ padding: 10 }}>Plan</th>
-                  <th style={{ padding: 10 }}>Banned</th>
-                  <th style={{ padding: 10 }}>Actions</th>
+                  <th style={{ padding: 10 }}>Tên người dùng</th>
+                  <th style={{ padding: 10 }}>Vai trò</th>
+                  <th style={{ padding: 10 }}>Tài khoản</th>
+                  <th style={{ padding: 10 }}>Cấm</th>
+                  <th style={{ padding: 10 }}>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,13 +144,13 @@ export default function AdminUsersPage() {
 
           <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Prev
+              Trước
             </button>
             <span>
-              Page <b>{page}</b> / {meta.totalPages}
+              Trang <b>{page}</b> / {meta.totalPages}
             </span>
             <button disabled={page >= meta.totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
+              Sau
             </button>
           </div>
         </>

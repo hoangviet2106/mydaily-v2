@@ -32,26 +32,26 @@ function AlertBanner({ alert }) {
     status === "NO_BUDGET"
       ? `Chưa có budget cho ${pad2(month)}/${year}. Tổng chi: ${formatMoney(totalExpense)}`
       : `Tháng ${pad2(month)}/${year}: ${formatMoney(totalExpense)} / ${formatMoney(
-          budgetLimit
-        )} (${percentUsed ?? 0}%)`;
+        budgetLimit
+      )} (${percentUsed ?? 0}%)`;
 
   const cls =
     status === "OVER"
       ? "banner banner--danger"
       : status === "WARNING"
-      ? "banner banner--warn"
-      : status === "OK"
-      ? "banner banner--ok"
-      : "banner";
+        ? "banner banner--warn"
+        : status === "OK"
+          ? "banner banner--ok"
+          : "banner";
 
   const label =
     status === "OVER"
       ? "Vượt ngân sách"
       : status === "WARNING"
-      ? "Sắp vượt ngân sách"
-      : status === "OK"
-      ? "Trong ngưỡng"
-      : "Chưa thiết lập budget";
+        ? "Sắp vượt ngân sách"
+        : status === "OK"
+          ? "Trong ngưỡng"
+          : "Chưa thiết lập budget";
 
   return (
     <div className={cls}>
@@ -317,8 +317,8 @@ export default function ExpensesPage() {
         {/* Header */}
         <div className="dashHeader">
           <div>
-            <div className="pageTitle">Expenses</div>
-            <div className="dashDate">Quản lý chi tiêu theo tháng, category và ghi chú.</div>
+            <div className="pageTitle">Chi tiêu</div>
+            <div className="dashDate">Quản lý chi tiêu theo tháng, danh mục và ghi chú.</div>
           </div>
 
           <div className="pageActions">
@@ -374,7 +374,7 @@ export default function ExpensesPage() {
                 onChange={(e) => setCategoryId(e.target.value)}
                 style={{ minWidth: 200 }}
               >
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}

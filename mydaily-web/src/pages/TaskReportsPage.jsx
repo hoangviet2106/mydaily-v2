@@ -32,7 +32,7 @@ export default function TaskReportsPage() {
       {/* Header */}
       <div className="topbar">
         <div>
-          <div className="h1">Task Reports</div>
+          <div className="h1">Báo cáo công việc</div>
           <div className="p-muted">Theo dõi năng suất và tiến độ công việc</div>
         </div>
 

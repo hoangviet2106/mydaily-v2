@@ -79,15 +79,15 @@ function Icon({ name }) {
           <path {...stroke} d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
         </svg>
       );
-      case "admin":
-  return (
-    <svg {...common}>
-      <path {...stroke} d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-      <path {...stroke} d="M4 21v-1a7 7 0 0 1 14 0v1" />
-      <path {...stroke} d="M18 8h3" />
-      <path {...stroke} d="M19.5 6.5v3" />
-    </svg>
-  );
+    case "admin":
+      return (
+        <svg {...common}>
+          <path {...stroke} d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+          <path {...stroke} d="M4 21v-1a7 7 0 0 1 14 0v1" />
+          <path {...stroke} d="M18 8h3" />
+          <path {...stroke} d="M19.5 6.5v3" />
+        </svg>
+      );
 
     default:
       return null;
@@ -217,19 +217,19 @@ export default function DashboardLayout() {
 
   const location = useLocation();
 
-const pageName = useMemo(() => {
-  const p = location.pathname;
-  if (p.startsWith("/admin")) return "Admin";
-  if (p.startsWith("/tasks")) return "Tasks";
-  if (p.startsWith("/task-reports")) return "Task Reports";
-  if (p.startsWith("/expenses")) return "Expenses";
-  if (p.startsWith("/categories")) return "Categories";
-  if (p.startsWith("/budgets")) return "Budgets";
-  if (p.startsWith("/reports")) return "Finance Reports";
-  if (p.startsWith("/export")) return "Export Data";
-  if (p.startsWith("/profile")) return "Profile";
-  return "Dashboard";
-}, [location.pathname]);
+  const pageName = useMemo(() => {
+    const p = location.pathname;
+    if (p.startsWith("/admin")) return "Admin";
+    if (p.startsWith("/tasks")) return "Tasks";
+    if (p.startsWith("/task-reports")) return "Task Reports";
+    if (p.startsWith("/expenses")) return "Expenses";
+    if (p.startsWith("/categories")) return "Categories";
+    if (p.startsWith("/budgets")) return "Budgets";
+    if (p.startsWith("/reports")) return "Finance Reports";
+    if (p.startsWith("/export")) return "Export Data";
+    if (p.startsWith("/profile")) return "Profile";
+    return "Dashboard";
+  }, [location.pathname]);
 
 
   return (
@@ -242,77 +242,76 @@ const pageName = useMemo(() => {
         </div>
 
         <nav className="sidebar__nav">
-          <SideLink to="/dashboard" icon="dashboard" label="Dashboard" />
-          <SideLink to="/tasks" icon="tasks" label="Tasks" />
-          <SideLink to="/task-reports" icon="taskreports" label="Task Reports" />
-          <SideLink to="/expenses" icon="expenses" label="Expenses" />
-          <SideLink to="/categories" icon="categories" label="Categories" />
-          <SideLink to="/budgets" icon="budgets" label="Budgets" />
-          <SideLink to="/reports" icon="reports" label="Finance Reports" />
-          <SideLink to="/export" icon="export" label="Export Data" />
+          <SideLink to="/dashboard" icon="dashboard" label="Trang chủ" />
+          <SideLink to="/tasks" icon="tasks" label="Công việc" />
+          <SideLink to="/task-reports" icon="taskreports" label="Báo cáo công việc" />
+          <SideLink to="/expenses" icon="expenses" label="Chi tiêu" />
+          <SideLink to="/categories" icon="categories" label="Danh mục" />
+          <SideLink to="/budgets" icon="budgets" label="Ngân sách" />
+          <SideLink to="/reports" icon="reports" label="Báo cáo chi tiêu" />
+          <SideLink to="/export" icon="export" label="Trích xuất dữ liệu" />
           {me?.role === "ADMIN" && (
-  <SideLink to="/admin/users" icon="admin" label="Admin Users" />
-)}
+            <SideLink to="/admin/users" icon="admin" label="Quản lý người dùng" />
+          )}
 
 
           {/* NEW: Profile */}
-          <SideLink to="/profile" icon="profile" label="Profile" />
+          <SideLink to="/profile" icon="profile" label="Thông tin" />
         </nav>
 
-       <div className="sidebar__foot">
-  <div
-    className={`planBadge ${
-      accountType === "PREMIUM" ? "planBadge--premium" : "planBadge--free"
-    }`}
-    title={accountType === "PREMIUM" ? "Premium Plan" : "Free Plan"}
-  >
-    <span className="planBadge__dot" />
-    <span className="planBadge__text">{meLoading ? "Loading" : accountType}</span>
-    {accountType === "PREMIUM" && <span className="planBadge__icon">👑</span>}
-  </div>
+        <div className="sidebar__foot">
+          <div
+            className={`planBadge ${accountType === "PREMIUM" ? "planBadge--premium" : "planBadge--free"
+              }`}
+            title={accountType === "PREMIUM" ? "Premium Plan" : "Free Plan"}
+          >
+            <span className="planBadge__dot" />
+            <span className="planBadge__text">{meLoading ? "Loading" : accountType}</span>
+            {accountType === "PREMIUM" && <span className="planBadge__icon">👑</span>}
+          </div>
 
-  <button className="btn btn--ghost" onClick={onLogout}>
-    Logout
-  </button>
-</div>
+          <button className="btn btn--ghost" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
 
 
       </aside>
 
       {/* Main */}
       <main className="main">
-  {/* ✅ TOPBAR */}
-  <div className="topbar">
-    <div className="topbar__left">
-      <div className="crumbs">
-        Dashboard / <b>{pageName}</b>
-      </div>
-    </div>
+        {/* ✅ TOPBAR */}
+        <div className="topbar">
+          <div className="topbar__left">
+            <div className="crumbs">
+              Dashboard / <b>{pageName}</b>
+            </div>
+          </div>
 
-    <div className="topbar__right">
-      <div className="topbar__hello">Chào, {meLoading ? "…" : displayName}</div>
-      <div className="topbar__avatar">
-       {me?.avatar_url ? (
-  <img
-    src={me.avatar_url}
-    alt={displayName}
-    className="topbar__avatarImg"
-    referrerPolicy="no-referrer"
-  />
-) : (
-  <div className="topbar__avatar">
-    {(displayName || "M").slice(0, 1).toUpperCase()}
-  </div>
-)}
+          <div className="topbar__right">
+            <div className="topbar__hello">Chào, {meLoading ? "…" : displayName}</div>
+            <div className="topbar__avatar">
+              {me?.avatar_url ? (
+                <img
+                  src={me.avatar_url}
+                  alt={displayName}
+                  className="topbar__avatarImg"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="topbar__avatar">
+                  {(displayName || "M").slice(0, 1).toUpperCase()}
+                </div>
+              )}
 
-      </div>
-    </div>
-  </div>
+            </div>
+          </div>
+        </div>
 
-  <div className="main__content">
-    <Outlet context={{ accountType, me, meLoading, refreshMe }} />
-  </div>
-</main>
+        <div className="main__content">
+          <Outlet context={{ accountType, me, meLoading, refreshMe }} />
+        </div>
+      </main>
 
     </div>
   );

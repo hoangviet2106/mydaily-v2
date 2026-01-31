@@ -186,7 +186,7 @@ export default function BudgetsPage() {
         {/* Header */}
         <div className="dashHeader">
           <div>
-            <div className="pageTitle">Budgets</div>
+            <div className="pageTitle">Ngân sách</div>
             <div className="dashDate">
               Thiết lập ngân sách theo tháng và theo dõi Ngân sách vs Chi tiêu.
             </div>

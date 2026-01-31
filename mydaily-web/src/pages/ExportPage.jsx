@@ -115,7 +115,7 @@ export default function ExportPage() {
       {/* Header */}
       <div className="row" style={{ alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ margin: 0 }}>Export Data</h3>
+          <h3 style={{ margin: 0 }}>Trích xuất dữ liệu</h3>
           <p className="p-muted">Tải dữ liệu xuống dạng CSV hoặc Excel (XLSX) theo tháng.</p>
         </div>
 

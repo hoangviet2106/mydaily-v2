@@ -155,7 +155,7 @@ export default function CategoriesPage() {
         {/* Header */}
         <div className="dashHeader">
           <div>
-            <div className="pageTitle">Categories</div>
+            <div className="pageTitle">Danh mục</div>
             <div className="dashDate">
               Quản lý danh mục chi tiêu để nhập liệu nhanh và báo cáo chính xác.
             </div>
@@ -245,7 +245,7 @@ export default function CategoriesPage() {
 
         <Modal
           open={open}
-          title={mode === "edit" ? "Edit category" : "Add category"}
+          title={mode === "edit" ? "Edit category" : "Thêm danh mục"}
           onClose={() => (submitting ? null : setOpen(false))}
         >
           <CategoryForm

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-import { useOutletContext,useNavigate  } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 
 
 export default function DashboardHome() {
   const { me, meLoading } = useOutletContext() || {};
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [basic, setBasic] = useState(null);
   const [error, setError] = useState("");
 
@@ -108,26 +108,26 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        
-<div className="dashHero__right">
-  <button
-    className="btn btn-primary btn-block dashHero__cta"
-    onClick={() => navigate("/tasks")}
-  >
-    <span>Tiếp tục task tiếp theo</span>
-    <span className="dashHero__ctaIcon">→</span>
-  </button>
 
-  <div className="dashHero__hint">
-    Tip: vào <b>Tasks</b> để chỉnh sửa hoặc thêm việc mới
-  </div>
-</div>
+        <div className="dashHero__right">
+          <button
+            className="btn btn-primary btn-block dashHero__cta"
+            onClick={() => navigate("/tasks")}
+          >
+            <span>Tiếp tục task tiếp theo</span>
+            <span className="dashHero__ctaIcon">→</span>
+          </button>
+
+          <div className="dashHero__hint">
+            Tip: vào <b>Tasks</b> để chỉnh sửa hoặc thêm việc mới
+          </div>
+        </div>
       </div>
 
       {/* 2 columns */}
       <div className="dashCols">
         <section className="card pad-md">
-          <div className="sectionTitle">Productivity</div>
+          <div className="sectionTitle">Năng suất</div>
           <div className="grid dashMiniGrid">
             <MiniStat title="Tasks hôm nay" value={t.total} hint="Created today" />
             <MiniStat title="Hoàn thành" value={t.completed} hint="Marked done today" />
@@ -136,7 +136,7 @@ export default function DashboardHome() {
         </section>
 
         <section className="card pad-md">
-          <div className="sectionTitle">Finance</div>
+          <div className="sectionTitle">Tài chính</div>
           <div className="grid dashMiniGrid">
             <MiniStat
               title="Chi tiêu tháng này"

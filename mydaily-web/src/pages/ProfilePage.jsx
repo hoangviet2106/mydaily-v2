@@ -41,9 +41,9 @@ export default function ProfilePage() {
     } catch (e) {
       setErr(
         e?.response?.data?.message ||
-          e?.response?.data?.error ||
-          e?.message ||
-          "Failed to load profile."
+        e?.response?.data?.error ||
+        e?.message ||
+        "Failed to load profile."
       );
     } finally {
       setLoading(false);
@@ -76,9 +76,9 @@ export default function ProfilePage() {
     } catch (e) {
       setErr(
         e?.response?.data?.message ||
-          e?.response?.data?.error ||
-          e?.message ||
-          "Save failed."
+        e?.response?.data?.error ||
+        e?.message ||
+        "Save failed."
       );
     } finally {
       setSaving(false);
@@ -90,7 +90,7 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="topbar">
         <div>
-          <div className="h1">Profile</div>
+          <div className="h1">Thông tin cá nhân</div>
           <div className="p-muted">Xem và chỉnh sửa thông tin tài khoản.</div>
         </div>
 
@@ -118,19 +118,18 @@ export default function ProfilePage() {
           {/* Summary cards (đồng nhất kiểu cards3) */}
           <div className="cards3" style={{ marginTop: 12 }}>
             <div className="mini">
-              <div className="mini__label">Account Type</div>
-<div
-      className={`planBadge ${
-        accountType === "PREMIUM" ? "planBadge--premium" : "planBadge--free"
-      }`}
-      style={{ marginTop: 6 }}
-    >
-      <span className="planBadge__dot" />
-      <span className="planBadge__text">
-        {accountType === "PREMIUM" ? "Premium Plan" : "Free Plan"}
-      </span>
-      {accountType === "PREMIUM" && <span className="planBadge__icon">👑</span>}
-    </div>
+              <div className="mini__label">Loại tài khoản</div>
+              <div
+                className={`planBadge ${accountType === "PREMIUM" ? "planBadge--premium" : "planBadge--free"
+                  }`}
+                style={{ marginTop: 6 }}
+              >
+                <span className="planBadge__dot" />
+                <span className="planBadge__text">
+                  {accountType === "PREMIUM" ? "Premium Plan" : "Free Plan"}
+                </span>
+                {accountType === "PREMIUM" && <span className="planBadge__icon">👑</span>}
+              </div>
               <div className="mini__hint">Gói hiện tại</div>
             </div>
 
@@ -143,7 +142,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="mini">
-              <div className="mini__label">Created</div>
+              <div className="mini__label">Ngày tạo</div>
               <div className="mini__value mono">{fmtDateTime(me.created_at || me.createdAt)}</div>
               <div className="mini__hint">Ngày tạo tài khoản</div>
             </div>
