@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `banned_at` DATETIME(0) NULL,
+    ADD COLUMN `is_banned` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `role` ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER';
