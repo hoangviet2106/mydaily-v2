@@ -47,7 +47,7 @@ exports.register = async (req, res, next) => {
   if (existing) {
     return res.status(409).json({
       error: "EMAIL_TAKEN",
-      message: "Email already exists",
+      message: "Email đã tồn tại",
     });
   }
 
@@ -97,14 +97,14 @@ exports.login = async (req, res, next) => {
   if (!user) {
     return res.status(401).json({
       error: "INVALID_CREDENTIALS",
-      message: "Wrong email or password",
+      message: "Sai email hoặc mật khẩu",
     });
   }
   
   if (user.is_banned) {
   return res.status(403).json({
     error: "BANNED",
-    message: "Account has been banned",
+    message: "Tài khoản của bạn đã bị cấm",
   });
 }
 
@@ -112,7 +112,7 @@ exports.login = async (req, res, next) => {
   if (!ok) {
     return res.status(401).json({
       error: "INVALID_CREDENTIALS",
-      message: "Wrong email or password",
+      message: "Sai email hoặc mật khẩu",
     });
   }
 

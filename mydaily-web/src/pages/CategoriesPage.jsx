@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "../components/Modal";
+import ConfirmDialog from "../components/ConfirmDialog"; // ✅ NEW
 import {
   createCategory,
   deleteCategory,
@@ -67,6 +68,11 @@ export default function CategoriesPage() {
   const [editing, setEditing] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // ✅ NEW: confirm delete modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null); // { id, name }
+  const [deleting, setDeleting] = useState(false);
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return items;
@@ -131,14 +137,29 @@ export default function CategoriesPage() {
     }
   };
 
-  const onDelete = async (cat) => {
-    const ok = window.confirm(`Xóa category "${cat.name}"?`);
-    if (!ok) return;
+  /**
+   * ✅ DELETE (open confirm modal instead of window.confirm)
+   */
+  const onDelete = (cat) => {
+    setPendingDelete({ id: cat.id, name: cat.name });
+    setConfirmOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleting) return;
+    setConfirmOpen(false);
+    setPendingDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete?.id) return;
 
     setError("");
+    setDeleting(true);
     try {
-      await deleteCategory(cat.id);
-      setItems((prev) => prev.filter((x) => x.id !== cat.id));
+      await deleteCategory(pendingDelete.id);
+      setItems((prev) => prev.filter((x) => x.id !== pendingDelete.id));
+      closeDeleteModal();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -146,6 +167,8 @@ export default function CategoriesPage() {
         err?.message ||
         "Delete category failed.";
       setError(msg);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -162,10 +185,10 @@ export default function CategoriesPage() {
           </div>
 
           <div className="pageActions">
-            <button className="btn" onClick={load} disabled={loading}>
+            <button className="btn" onClick={load} disabled={loading} type="button">
               Tải lại trang
             </button>
-            <button className="btn btn-primary" onClick={openCreate}>
+            <button className="btn btn-primary" onClick={openCreate} type="button">
               + Thêm mới
             </button>
           </div>
@@ -227,10 +250,10 @@ export default function CategoriesPage() {
                       <td style={{ fontWeight: 900 }}>{c.name}</td>
                       <td style={{ textAlign: "right" }}>
                         <div className="row" style={{ justifyContent: "flex-end" }}>
-                          <button className="btn btn-sm" onClick={() => openEdit(c)}>
+                          <button className="btn btn-sm" onClick={() => openEdit(c)} type="button">
                             Chỉnh sửa
                           </button>
-                          <button className="btn btn-sm btn-danger" onClick={() => onDelete(c)}>
+                          <button className="btn btn-sm btn-danger" onClick={() => onDelete(c)} type="button">
                             Xóa
                           </button>
                         </div>
@@ -243,6 +266,7 @@ export default function CategoriesPage() {
           </div>
         )}
 
+        {/* Create/Edit modal */}
         <Modal
           open={open}
           title={mode === "edit" ? "Edit category" : "Thêm danh mục"}
@@ -256,6 +280,22 @@ export default function CategoriesPage() {
             onCancel={() => setOpen(false)}
           />
         </Modal>
+
+        {/* ✅ Confirm delete modal */}
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Xoá danh mục"
+          message={
+            pendingDelete?.name
+              ? `Bạn có muốn xoá category "${pendingDelete.name}" không?`
+              : "Bạn có muốn xoá category này không?"
+          }
+          confirmText="Có, xoá"
+          cancelText="Không"
+          loading={deleting}
+          onCancel={closeDeleteModal}
+          onConfirm={confirmDelete}
+        />
       </div>
     </div>
   );

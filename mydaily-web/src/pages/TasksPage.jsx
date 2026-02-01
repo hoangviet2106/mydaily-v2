@@ -2,14 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import TaskDrawer from "../components/TaskDrawer";
 import TaskFilters from "../components/TaskFilters";
 import TaskList from "../components/TaskList";
-import api from "../api/axios"; // ✅ NEW: dùng để load streak từ /dashboard/basic
-import {
-  createTask,
-  deleteTask,
-  fetchTasks,
-  updateTask,
-  completeTask,
-} from "../api/tasks";
+import ConfirmDialog from "../components/ConfirmDialog"; // ✅ NEW
+import api from "../api/axios"; // ✅ load streak from /dashboard/basic
+import { createTask, deleteTask, fetchTasks, updateTask, completeTask } from "../api/tasks";
 
 function normalizeDateInput(v) {
   return v ? v : null;
@@ -38,6 +33,11 @@ export default function TasksPage() {
   const [drawerMode, setDrawerMode] = useState("create");
   const [selected, setSelected] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ NEW: confirm delete modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null); // { id, title }
+  const [deleting, setDeleting] = useState(false);
 
   const params = useMemo(() => {
     return {
@@ -70,7 +70,7 @@ export default function TasksPage() {
     }
   };
 
-  // ✅ NEW: load streak from backend so refresh won't reset to 0
+  // ✅ load streak from backend so refresh won't reset
   const loadStreak = async () => {
     try {
       const res = await api.get("/dashboard/basic");
@@ -86,7 +86,7 @@ export default function TasksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
-  // ✅ load streak once on page open (and you can also refresh it after actions if needed)
+  // load streak once on page open
   useEffect(() => {
     loadStreak();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,7 +123,7 @@ export default function TasksPage() {
       }
       setDrawerOpen(false);
       await load();
-      await loadStreak(); // ✅ optional: sync streak after create/edit
+      await loadStreak();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -137,27 +137,23 @@ export default function TasksPage() {
   };
 
   /**
-   * 🔥 COMPLETE TASK + UPDATE STREAK
+   * ✅ COMPLETE TASK + UPDATE STREAK
    */
   const onToggleComplete = async (task) => {
     if (task.is_completed) return;
 
     // optimistic UI
-    setItems((prev) =>
-      prev.map((x) => (x.id === task.id ? { ...x, is_completed: true } : x))
-    );
+    const snapshot = items;
+    setItems((prev) => prev.map((x) => (x.id === task.id ? { ...x, is_completed: true } : x)));
 
     try {
       const result = await completeTask(task.id);
       // result = { task, streak }
 
-      setItems((prev) =>
-        prev.map((x) => (x.id === task.id ? result.task : x))
-      );
-
-      setStreak(result.streak); // ✅ realtime update
+      setItems((prev) => prev.map((x) => (x.id === task.id ? result.task : x)));
+      setStreak(result.streak); // realtime update
     } catch (err) {
-      setItems(items);
+      setItems(snapshot);
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -167,15 +163,30 @@ export default function TasksPage() {
     }
   };
 
-  const onDelete = async (task) => {
-    const ok = window.confirm(`Delete task: "${task.title}"?`);
-    if (!ok) return;
+  /**
+   * ✅ DELETE TASK (open modal instead of window.confirm)
+   */
+  const onDelete = (task) => {
+    setPendingDelete({ id: task.id, title: task.title });
+    setConfirmOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleting) return;
+    setConfirmOpen(false);
+    setPendingDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete?.id) return;
 
     setErr("");
+    setDeleting(true);
     try {
-      await deleteTask(task.id);
+      await deleteTask(pendingDelete.id);
+      closeDeleteModal();
       await load();
-      await loadStreak(); // ✅ sync streak if needed
+      await loadStreak();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -183,6 +194,8 @@ export default function TasksPage() {
         err?.message ||
         "Delete failed";
       setErr(msg);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -212,30 +225,22 @@ export default function TasksPage() {
 
         <div className="mini">
           <div className="mini__label">Hoàn thành</div>
-          <div className="mini__value mono">
-            {items.filter((x) => x.is_completed).length}
-          </div>
+          <div className="mini__value mono">{items.filter((x) => x.is_completed).length}</div>
           <div className="mini__hint">Danh sách hiện có</div>
         </div>
 
         <div className="mini">
           <div className="mini__label">Mở</div>
-          <div className="mini__value mono">
-            {items.filter((x) => !x.is_completed).length}
-          </div>
+          <div className="mini__value mono">{items.filter((x) => !x.is_completed).length}</div>
           <div className="mini__hint">Danh sách hiện có</div>
         </div>
 
-        {/* 🔥 Streak card */}
+        {/* Streak card */}
         <div className="mini">
           <div className="mini__label">Streak</div>
           <div className="mini__value mono">🔥 {streak?.current_streak ?? 0}</div>
           <div className="mini__hint">
-            {streak
-              ? streak.today_done
-                ? "✅ Hôm nay đã giữ streak"
-                : "⚠️ Chưa hoàn thành hôm nay"
-              : "Đang tải streak..."}
+            {streak ? (streak.today_done ? "✅ Hôm nay đã giữ streak" : "⚠️ Chưa hoàn thành hôm nay") : "Đang tải streak..."}
           </div>
         </div>
       </div>
@@ -264,12 +269,20 @@ export default function TasksPage() {
       {err ? <div className="alert">{err}</div> : null}
 
       {/* Table */}
-      <TaskList
-        loading={loading}
-        items={items}
-        onEdit={openEdit}
-        onDelete={onDelete}
-        onToggleComplete={onToggleComplete}
+      <TaskList loading={loading} items={items} onEdit={openEdit} onDelete={onDelete} onToggleComplete={onToggleComplete} />
+
+      {/* ✅ Confirm Delete Modal */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Xoá công việc"
+        message={
+          pendingDelete?.title ? `Bạn có muốn xoá task "${pendingDelete.title}" không?` : "Bạn có muốn xoá task này không?"
+        }
+        confirmText="Có, xoá"
+        cancelText="Không"
+        loading={deleting}
+        onCancel={closeDeleteModal}
+        onConfirm={confirmDelete}
       />
 
       {/* Drawer */}

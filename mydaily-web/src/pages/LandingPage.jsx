@@ -52,6 +52,7 @@ export default function LandingPage() {
             <a href="#features">Tính năng</a>
             <a href="#why">Vì sao MyDaily</a>
             <a href="#pricing">Gói dịch vụ</a>
+            <a href="#infor">Thông tin chung</a>
             <button className="btn-nav" type="button" onClick={goLogin}>
               Bắt đầu
             </button>
@@ -235,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="final-cta fade-in-scroll">
+      <section className="final-cta fade-in-scroll" id="infor">
         <div className="lp-info-grid">
           <div className="lp-info-col">
             <h3>Thông tin chung</h3>

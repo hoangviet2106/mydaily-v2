@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "../components/Modal";
-import { fetchCategories } from "../api/categories";
+import ConfirmDialog from "../components/ConfirmDialog"; // ✅ NEW
+import { fetchCategories } from "../api/category";
 import { createExpense, deleteExpense, fetchExpenses, updateExpense } from "../api/expenses";
 
 function pad2(n) {
@@ -91,7 +92,7 @@ function ExpenseForm({ mode, categories, initialValue, submitting, onSubmit, onC
 
     onSubmit?.({
       amount: n,
-      expense_date: expenseDate, // yyyy-mm-dd (backend zod coerce date OK)
+      expense_date: expenseDate,
       category_id: categoryId,
       note: note?.trim() ? note.trim() : null,
     });
@@ -150,10 +151,10 @@ function ExpenseForm({ mode, categories, initialValue, submitting, onSubmit, onC
 
       <div className="row" style={{ justifyContent: "flex-end", marginTop: 14 }}>
         <button type="button" className="btn" onClick={onCancel} disabled={submitting}>
-          Cancel
+          Hủy
         </button>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? "Saving…" : mode === "edit" ? "Update expense" : "Add expense"}
+          {submitting ? "Saving…" : mode === "edit" ? "Cập nhật" : "Thêm mới"}
         </button>
       </div>
     </form>
@@ -178,11 +179,16 @@ export default function ExpensesPage() {
   // alert from backend (after mutations)
   const [alert, setAlert] = useState(null);
 
-  // modal
+  // modal create/edit
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("create"); // create | edit
   const [editing, setEditing] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ NEW: confirm delete modal
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null); // expense object
+  const [deleting, setDeleting] = useState(false);
 
   const catMap = useMemo(() => {
     const m = new Map();
@@ -196,6 +202,7 @@ export default function ExpensesPage() {
       const my = toMonthYear(e.expense_date);
       if (my.month !== Number(month) || my.year !== Number(year)) return false;
       if (categoryId && e.category_id !== categoryId) return false;
+
       if (query) {
         const note = (e.note || "").toLowerCase();
         const catName = (catMap.get(e.category_id)?.name || "").toLowerCase();
@@ -213,11 +220,7 @@ export default function ExpensesPage() {
       sums.set(e.category_id, (sums.get(e.category_id) || 0) + Number(e.amount || 0));
     }
     const rows = [...sums.entries()]
-      .map(([cid, amt]) => ({
-        cid,
-        name: catMap.get(cid)?.name || "Unknown",
-        amt,
-      }))
+      .map(([cid, amt]) => ({ cid, name: catMap.get(cid)?.name || "Unknown", amt }))
       .sort((a, b) => b.amt - a.amt)
       .slice(0, 4);
 
@@ -292,15 +295,30 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleDelete = async (exp) => {
-    const ok = window.confirm("Delete expense này?");
-    if (!ok) return;
+  /**
+   * ✅ DELETE (open confirm modal)
+   */
+  const handleDelete = (exp) => {
+    setPendingDelete(exp);
+    setConfirmOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleting) return;
+    setConfirmOpen(false);
+    setPendingDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete?.id) return;
 
     setError("");
+    setDeleting(true);
     try {
-      const res = await deleteExpense(exp.id);
-      setExpenses((prev) => prev.filter((x) => x.id !== exp.id));
+      const res = await deleteExpense(pendingDelete.id);
+      setExpenses((prev) => prev.filter((x) => x.id !== pendingDelete.id));
       setAlert(res.alert || null);
+      closeDeleteModal();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -308,6 +326,8 @@ export default function ExpensesPage() {
         err?.message ||
         "Delete failed.";
       setError(msg);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -325,7 +345,7 @@ export default function ExpensesPage() {
             <button className="btn" onClick={load} disabled={loading}>
               Tải lại trang
             </button>
-            <button className="btn btn-primary" onClick={openCreate}>
+            <button className="btn btn-primary" onClick={openCreate} type="button">
               + Thêm mới chi tiêu
             </button>
           </div>
@@ -447,7 +467,6 @@ export default function ExpensesPage() {
               </div>
             </div>
 
-            {/* ✅ FIX: single scroll + sticky header works */}
             <div className="table-scroll" style={{ marginTop: 14 }}>
               <div className="table-wrap">
                 <table className="table table__head-sticky">
@@ -472,10 +491,10 @@ export default function ExpensesPage() {
                         </td>
                         <td style={{ textAlign: "right" }}>
                           <div className="row" style={{ justifyContent: "flex-end" }}>
-                            <button className="btn btn-sm" onClick={() => openEdit(e)}>
+                            <button className="btn btn-sm" onClick={() => openEdit(e)} type="button">
                               Chỉnh Sửa
                             </button>
-                            <button className="btn btn-sm btn-danger" onClick={() => handleDelete(e)}>
+                            <button className="btn btn-sm btn-danger" onClick={() => handleDelete(e)} type="button">
                               Xóa
                             </button>
                           </div>
@@ -489,6 +508,7 @@ export default function ExpensesPage() {
           </>
         )}
 
+        {/* Create/Edit Modal */}
         <Modal
           open={open}
           title={mode === "edit" ? "Edit expense" : "Add expense"}
@@ -504,6 +524,24 @@ export default function ExpensesPage() {
             onCancel={() => setOpen(false)}
           />
         </Modal>
+
+        {/* ✅ Confirm Delete Modal */}
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Xoá chi tiêu"
+          message={
+            pendingDelete
+              ? `Bạn có muốn xoá chi tiêu "${catMap.get(pendingDelete.category_id)?.name || "Unknown"}" - ${formatMoney(
+                pendingDelete.amount
+              )} VNĐ không?`
+              : "Bạn có muốn xoá chi tiêu này không?"
+          }
+          confirmText="Có, xoá"
+          cancelText="Không"
+          loading={deleting}
+          onCancel={closeDeleteModal}
+          onConfirm={confirmDelete}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { fetchCategories } from "../api/categories";
+import { fetchCategories } from "../api/category";
 import {
   getBreakdownByCategory,
   getBudgetVsActual,

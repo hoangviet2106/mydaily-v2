@@ -197,9 +197,12 @@ export default function DashboardLayout() {
 
   const onLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user"); // nếu có
     setMe(null);
     setToken(null);
-    navigate("/login");
+
+    // dùng replace để không back lại dashboard
+    navigate("/", { replace: true });
   };
 
   const accountType = useMemo(() => normalizeAccountType(me, token), [me, token]);

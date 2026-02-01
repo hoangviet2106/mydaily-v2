@@ -16,18 +16,30 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 401: logout sạch + về login (tránh loop)
+let _handling401 = false;
+
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     const status = error?.response?.status;
+
     if (status === 401) {
       localStorage.removeItem("token");
+
       const path = window.location.pathname;
-      if (path !== "/login" && path !== "/register") {
-        // window.location.href = "/login";
+      const isAuthPage = path === "/login" || path === "/register";
+
+      if (!isAuthPage && !_handling401) {
+        _handling401 = true;
+
+        // fallback: tối thiểu phải có thông báo
+        // eslint-disable-next-line no-alert
+        alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+
+        window.location.href = "/login";
       }
     }
+
     return Promise.reject(error);
   }
 );

@@ -1,11 +1,33 @@
 import { useEffect, useState } from "react";
 
+function bangkokYMD(date = new Date()) {
+  // Convert to Bangkok time then format YYYY-MM-DD
+  const shifted = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  const y = shifted.getUTCFullYear();
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(shifted.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function TaskFilters({ value, onChange, onReset }) {
   const [local, setLocal] = useState(value);
 
   useEffect(() => setLocal(value), [value]);
 
-  const apply = () => onChange?.(local);
+  const apply = () => {
+    // reset page để tránh “lọc xong trống” vì đang ở page cao
+    onChange?.({ ...local, page: 1 });
+  };
+
+  const setTodayBkk = () => {
+    const today = bangkokYMD();
+    setLocal((p) => ({ ...p, dueFrom: today, dueTo: today }));
+  };
+
+  const handleReset = () => {
+    // nếu parent reset filters, thường cũng muốn về page 1
+    onReset?.();
+  };
 
   return (
     <>
@@ -57,10 +79,14 @@ export default function TaskFilters({ value, onChange, onReset }) {
           title="Hạn đến"
         />
 
-        <button className="btn btn-sm btn-primary" type="button" onClick={apply}>
-          Tìm 
+        <button className="btn btn-sm btn-ghost" type="button" onClick={setTodayBkk} title="Set hạn = hôm nay (Bangkok)">
+          Hôm nay
         </button>
-        <button className="btn btn-sm btn-ghost" type="button" onClick={onReset}>
+
+        <button className="btn btn-sm btn-primary" type="button" onClick={apply}>
+          Tìm
+        </button>
+        <button className="btn btn-sm btn-ghost" type="button" onClick={handleReset}>
           Reset
         </button>
       </div>

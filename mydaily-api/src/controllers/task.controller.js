@@ -1,9 +1,10 @@
+// src/controllers/task.controller.js
 const prisma = require("../prisma");
 const { v4: uuid } = require("uuid");
 const { z } = require("zod");
 
 /** =========================
- * Helpers
+ * Helpers (legacy - keep if other code uses)
  * ========================= */
 function startOfToday() {
   const d = new Date();
@@ -115,6 +116,36 @@ function yesterdayDateOnly(dateOnlyUTC) {
   return d;
 }
 
+/**
+ * NEW: Bangkok day range in UTC, for DB queries.
+ * - startUTC: Bangkok 00:00 (local) converted to UTC
+ * - endUTC: exclusive end (startUTC + 24h)
+ */
+function bangkokDayRange(date = new Date()) {
+  const dateOnlyUTC = bangkokDateOnly(date);
+  const startUTC = new Date(dateOnlyUTC.getTime() - TZ_OFFSET_MIN * 60 * 1000);
+  const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000);
+  return { startUTC, endUTC, dateOnlyUTC };
+}
+
+/**
+ * NEW: Parse "YYYY-MM-DD" into Bangkok day range (UTC timestamps).
+ * Returns {startUTC, endUTC} or null
+ */
+function bangkokRangeFromYMD(ymd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || "").trim());
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+
+  const startUTC = new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0) - TZ_OFFSET_MIN * 60 * 1000);
+  const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000);
+  return { startUTC, endUTC };
+}
+
 async function getStreakSnapshot(tx, userId, todayDateOnly) {
   const s = await tx.userStreak.findUnique({ where: { user_id: userId } });
   const todayDone = s?.last_streak_date ? sameDateOnly(s.last_streak_date, todayDateOnly) : false;
@@ -143,7 +174,6 @@ async function updateStreakOnFirstCompletionToday(tx, userId, now) {
       },
     });
   } else {
-    // đã chốt hôm nay rồi => không cập nhật
     if (streak.last_streak_date && sameDateOnly(streak.last_streak_date, todayDateOnly)) {
       return {
         current_streak: streak.current_streak,
@@ -230,17 +260,18 @@ const getTasks = async (req, res) => {
     deleted_at: null,
   };
 
-  // status filter
-  const today = startOfToday();
+  // status filter (Bangkok date-only)
+  const { startUTC: todayStartUTC } = bangkokDayRange(new Date());
+
   if (q.status === "completed") {
     where.is_completed = true;
   } else if (q.status === "overdue") {
     where.is_completed = false;
-    where.due_date = { lt: today };
+    where.due_date = { lt: todayStartUTC };
   } else if (q.status === "open") {
-    // open = not completed AND (no due date OR due >= today)
+    // open = not completed AND (no due date OR due >= todayStartUTC)
     where.is_completed = false;
-    where.OR = [{ due_date: null }, { due_date: { gte: today } }];
+    where.OR = [{ due_date: null }, { due_date: { gte: todayStartUTC } }];
   }
 
   // search filter
@@ -253,38 +284,39 @@ const getTasks = async (req, res) => {
     ]);
   }
 
-  // due date range filter
+  // due date range filter (Bangkok day range, UTC timestamps)
   if (q.dueFrom || q.dueTo) {
     const dueWhere = {};
+
     if (q.dueFrom) {
-      const d = new Date(q.dueFrom);
-      if (Number.isNaN(d.getTime())) {
+      const r = bangkokRangeFromYMD(q.dueFrom);
+      if (!r) {
         return res.status(400).json({
           error: "VALIDATION_ERROR",
           message: "Invalid dueFrom, expected YYYY-MM-DD",
         });
       }
-      d.setHours(0, 0, 0, 0);
-      dueWhere.gte = d;
+      dueWhere.gte = r.startUTC;
     }
+
     if (q.dueTo) {
-      const d = new Date(q.dueTo);
-      if (Number.isNaN(d.getTime())) {
+      const r = bangkokRangeFromYMD(q.dueTo);
+      if (!r) {
         return res.status(400).json({
           error: "VALIDATION_ERROR",
           message: "Invalid dueTo, expected YYYY-MM-DD",
         });
       }
-      d.setHours(23, 59, 59, 999);
-      dueWhere.lte = d;
+      // exclusive end for whole Bangkok day
+      dueWhere.lt = r.endUTC;
     }
 
-    // gộp với logic status (nếu có)
-    if (where.due_date && typeof where.due_date === "object") {
+    if (where.due_date && typeof where.due_date === "object" && !Array.isArray(where.due_date)) {
       where.due_date = { ...where.due_date, ...dueWhere };
     } else if (!where.OR) {
       where.due_date = dueWhere;
     } else {
+      // open case: OR includes due_date null OR due_date >= todayStartUTC
       where.OR = [{ due_date: null }, { due_date: { ...(where.OR[1]?.due_date || {}), ...dueWhere } }];
     }
   }
@@ -312,7 +344,7 @@ const getTasks = async (req, res) => {
         is_completed: true,
         due_date: true,
         created_at: true,
-        completed_at: true, // ✅ NEW (nếu muốn show)
+        completed_at: true,
       },
     }),
   ]);
@@ -326,7 +358,7 @@ const getTasks = async (req, res) => {
 };
 
 /** =========================
- * POST /tasks  (FREE: 3/day)
+ * POST /tasks  (FREE: 5/day) - Bangkok day
  * ========================= */
 const createTask = async (req, res) => {
   const userId = req.user.sub;
@@ -342,29 +374,29 @@ const createTask = async (req, res) => {
     });
   }
 
-  // ===== Plan limit: FREE 3 tasks/day =====
+  // ===== Plan limit: FREE 5 tasks/day (Bangkok day) =====
   const accountType = getAccountType(req);
   if (accountType !== "PREMIUM") {
-    const from = startOfToday();
-    const to = endOfToday();
+    const { startUTC: from, endUTC: to } = bangkokDayRange(new Date());
 
     const createdToday = await prisma.task.count({
       where: {
         user_id: userId,
         deleted_at: null,
-        created_at: { gte: from, lte: to },
+        created_at: { gte: from, lt: to },
       },
     });
 
-    if (createdToday >= 3) {
+    if (createdToday >= 5) {
       return res.status(403).json({
         error: "LIMIT_REACHED",
-        message: "Người dùng Free chỉ được tạo tối đa 3 nhiệm vụ. Vui lòng nâng cấp PREMIUM để tạo không giới hạn.",
+        message: "Người dùng Free chỉ được tạo tối đa 5 nhiệm vụ/ngày. Vui lòng nâng cấp PREMIUM để tạo không giới hạn.",
         meta: {
-          limit: 3,
+          limit: 5,
           used: createdToday,
-          remaining: Math.max(0, 3 - createdToday),
-          resetAt: to.toISOString(),
+          remaining: Math.max(0, 5 - createdToday),
+          resetAt: new Date(to.getTime() - 1).toISOString(),
+          today: toBangkokYMD(new Date()),
         },
       });
     }
@@ -377,7 +409,7 @@ const createTask = async (req, res) => {
       description: data.description ?? null,
       due_date: data.due_date ?? null,
       is_completed: false,
-      completed_at: null, // ✅ NEW
+      completed_at: null,
       user_id: userId,
     },
     select: {
@@ -387,7 +419,7 @@ const createTask = async (req, res) => {
       is_completed: true,
       due_date: true,
       created_at: true,
-      completed_at: true, // ✅ NEW
+      completed_at: true,
     },
   });
 
@@ -397,7 +429,7 @@ const createTask = async (req, res) => {
 /** =========================
  * PATCH /tasks/:id
  * - Nếu set is_completed:true => complete + update streak
- * - Không cho set is_completed:false (tránh phá streak)
+ * - Không cho set is_completed:false
  * ========================= */
 const updateTask = async (req, res) => {
   const userId = req.user.sub;
@@ -495,7 +527,6 @@ const updateTask = async (req, res) => {
       ...(patch.title !== undefined ? { title: patch.title } : {}),
       ...(patch.description !== undefined ? { description: patch.description } : {}),
       ...(patch.due_date !== undefined ? { due_date: patch.due_date } : {}),
-      // is_completed không xử lý ở đây (đã xử lý phía trên)
     },
     select: {
       id: true,
@@ -504,7 +535,7 @@ const updateTask = async (req, res) => {
       is_completed: true,
       due_date: true,
       created_at: true,
-      completed_at: true, // ✅ NEW
+      completed_at: true,
     },
   });
 
@@ -537,6 +568,7 @@ const deleteTask = async (req, res) => {
 
   return res.json({ message: "Task deleted" });
 };
+
 /** =========================
  * PATCH /tasks/:id/complete
  * ========================= */
